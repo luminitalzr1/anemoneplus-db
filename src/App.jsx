@@ -1,8 +1,17 @@
 import { useState, useMemo, useEffect } from "react";
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  'https://hdhmgselnxdsqcxciupp.supabase.co',
+  'sb_publishable_QSEsCiwMDvKmmO-zY5zV3w_Ajq_L6X5'
+);
+
+
 
 // ── Seed data from UkrSCES template ────────────────────────────────────────
 const SEED = [
   { id:1, country:"Ukraine", name:"Ukrainian Scientific Centre of Ecology of the Sea (UkrSCES)", city:"Odesa", lat:46.4397, lng:30.7692, address:"65009, Ukraine, Odesa, Frantsuzsky Blvd., 89", audience:"Higher education and research organisations", aoi:"Water Quality Monitoring", expertise:"Research Institute", subregion:"North-Western Black Sea", mu:"Marine Waters", influence:10, impact:3, contact:"yura.oleynik209@gmail.com", gdpr:"YES", status:"Active", website:"https://sea.gov.ua", partner:"UKR-SCES", comments:"Project partner — lead for UKR stakeholders" },
+
   { id:2, country:"Ukraine", name:"State Ecological Inspectorate of the South-Western District", city:"Odesa", lat:46.4067, lng:30.7181, address:"65114, Ukraine, Odesa, Lustdorfska road, 22", audience:"Local public authority", aoi:"Water Quality Monitoring", expertise:"Local / Regional Authority", subregion:"North-Western Black Sea", mu:"All Waters", influence:10, impact:8, contact:"sw@dei.gov.ua", gdpr:"YES", status:"Potential", website:"https://sw.dei.gov.ua", partner:"UKR-SCES", comments:"Key decision-maker; permits and reporting" },
   { id:3, country:"Ukraine", name:"State Ecological Inspection of Ukraine", city:"Kyiv", lat:50.4231, lng:30.5284, address:"01042, Kyiv, Novopecherskyi Lane 3", audience:"National public authority", aoi:"Environmental protection", expertise:"National Authority / Ministry", subregion:"North-Western Black Sea", mu:"All Waters", influence:10, impact:8, contact:"info@dei.gov.ua", gdpr:"YES", status:"Potential", website:"https://dei.gov.ua/", partner:"UKR-SCES", comments:"Key decision-maker" },
   { id:4, country:"Ukraine", name:"Ministry of Economy, Environment and Agriculture of Ukraine", city:"Kyiv", lat:50.4474, lng:30.5342, address:"01008, Ukraine, Kyiv, M. Hrushevskoho Street, 12/2", audience:"National public authority", aoi:"Environmental protection", expertise:"National Authority / Ministry", subregion:"North-Western Black Sea", mu:"All Waters", influence:10, impact:10, contact:"meconomy@me.gov.ua", gdpr:"YES", status:"Potential", website:"https://me.gov.ua/", partner:"UKR-SCES", comments:"Key decision-maker; highest impact" },
@@ -52,10 +61,25 @@ const COUNTRIES = ["All countries", "Romania", "Bulgaria", "Ukraine", "Turkey", 
 const AUDIENCES = ["All audiences", "National public authority", "Regional public authority", "Local public authority", "Higher education and research organisations", "Interest groups including NGOs", "Education / training center and school", "Sectoral agency", "SME", "Business support organisation", "General public"];
 const STATUSES = ["All statuses", "Active", "Potential", "Pending", "Inactive"];
 
-const EMPTY = { country:"", name:"", city:"", lat:"", lng:"", address:"", audience:"", aoi:"", expertise:"", subregion:"", mu:"", influence:5, impact:5, contact:"", gdpr:"PENDING", status:"Pending", website:"", partner:"", comments:"" };
+const EMPTY = { country:"", name:"", city:"", lat:"", lng:"", address:"", audience:"", aoi:"", expertise:"", subregion:"", mu:"", influence:5, impact:5, contact:"", gdpr:"PENDING", status:"Pending", website:"", partner:"", comments:"", subregion_relevance:"", marine_units:"", engagement_approach:"", example_actions:"", communication_preferences:"", last_interaction_date:"", engagement_strategy:"" };
 
 export default function App() {
-  const [data, setData] = useState(SEED);
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    async function loadData() {
+      const { data: rows, error } = await supabase.from('stakeholders').select('*');
+      if (error) { console.error(error); setData(SEED); }
+      else if (rows.length === 0) {
+        // First time - insert seed data
+        await supabase.from('stakeholders').insert(SEED);
+        setData(SEED);
+      } else {
+        setData(rows);
+      }
+    }
+    loadData();
+  }, []);
   const [view, setView] = useState("table"); // table | form | stats
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
@@ -125,21 +149,25 @@ export default function App() {
     setSelected(null);
   }
 
-  function saveForm() {
+  async function saveForm() {
     if (!form.name || !form.country) { showToast("Name and Country are required", "error"); return; }
     if (editing) {
+      await supabase.from('stakeholders').update(form).eq('id', editing);
       setData(d => d.map(r => r.id === editing ? { ...form, id: editing } : r));
       showToast("Stakeholder updated ✓");
     } else {
       const id = nextId;
       setNextId(id + 1);
-      setData(d => [...d, { ...form, id }]);
+      const { data: inserted } = await supabase.from('stakeholders').insert([form]).select();
+      const newId = inserted?.[0]?.id || id;
+      setData(d => [...d, { ...form, id: newId }]);
       showToast("Stakeholder added ✓");
     }
     setView("table");
   }
 
-  function deleteRow(id) {
+  async function deleteRow(id) {
+    await supabase.from('stakeholders').delete().eq('id', id);
     setData(d => d.filter(r => r.id !== id));
     setSelected(null);
     showToast("Stakeholder removed");
@@ -151,14 +179,13 @@ export default function App() {
   }
 
   function exportCSV() {
-    const cols = ["id","country","name","city","lat","lng","address","audience","aoi","expertise","subregion","mu","influence","impact","category","contact","gdpr","status","website","partner","comments"];
+    const cols = ["id","country","name","city","lat","lng","address","audience","aoi","expertise","subregion","mu","influence","impact","category","contact","status","website","partner","comments"];
     const rows = [cols.join(","), ...data.map(r => cols.map(c => {
       const v = c === "category" ? getCategory(r.influence, r.impact) : (r[c] ?? "");
       return `"${String(v).replace(/"/g,'""')}"`;
     }).join(","))];
-    const blob = new Blob([rows.join("\n")], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "ANEMONE_PLUS_Stakeholder_Database.csv"; a.click();
+    const uri = "data:text/csv;charset=utf-8," + encodeURIComponent(rows.join("\n"));
+    const a = document.createElement("a"); a.href = uri; a.download = "ANEMONE_PLUS_Stakeholder_Database.csv"; a.click();
     showToast("CSV exported ✓");
   }
 
@@ -282,10 +309,6 @@ export default function App() {
               </div>
             );
           })}
-          <div style={{ marginTop:16, padding:"12px 14px", background:"#fffbeb", borderRadius:8, border:"1px solid #fde68a" }}>
-            <div style={{ fontSize:11, fontWeight:700, color:"#92400e", marginBottom:4 }}>⚠ GDPR Pending</div>
-            <div style={{ fontSize:13, color:"#78350f" }}>{data.filter(r=>r.gdpr==="PENDING").length} stakeholders awaiting GDPR consent confirmation</div>
-          </div>
         </div>
       </div>
     </div>
@@ -307,6 +330,7 @@ export default function App() {
           Fields marked with * are required. Geographic coordinates are mandatory for WebGIS integration.
         </div>
 
+        {/* SECTION 1: Basic Information */}
         <div style={{ fontWeight:700, fontSize:12, color:"#64748b", letterSpacing:"0.06em", textTransform:"uppercase", marginBottom:10 }}>Basic Information</div>
         <div style={S.formGrid}>
           {[
@@ -317,7 +341,7 @@ export default function App() {
             { label:"Longitude (E, WGS84) *", key:"lng", placeholder:"e.g. 28.6417" },
             { label:"Full Address (with postal code)", key:"address", span:2 },
           ].map(f => (
-            <div key={f.key} style={{ ...S.formGroup, gridColumn: f.span === 2 ? "1 / -1" : undefined }}>
+            <div key={f.key} style={{ ...S.formGroup, ...(f.span===2?{gridColumn:"1/-1"}:{}) }}>
               <label style={S.label}>{f.label}</label>
               {f.type === "select" ? (
                 <select style={S.input} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}>
@@ -325,23 +349,24 @@ export default function App() {
                   {f.opts.map(o => <option key={o}>{o}</option>)}
                 </select>
               ) : (
-                <input style={S.input} value={form[f.key]} placeholder={f.placeholder} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
+                <input style={S.input} defaultValue={form[f.key]} placeholder={f.placeholder} key={f.key + (editing||'new')} onBlur={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
               )}
             </div>
           ))}
         </div>
 
+        {/* SECTION 2: Classification */}
         <div style={{ fontWeight:700, fontSize:12, color:"#64748b", letterSpacing:"0.06em", textTransform:"uppercase", margin:"18px 0 10px" }}>Classification</div>
         <div style={S.formGrid}>
           {[
-            { label:"Target Audience (JEMS)", key:"audience", type:"select", opts:["National public authority","Regional public authority","Local public authority","Higher education and research organisations","Interest groups including NGOs","Education / training center and school","Sectoral agency","SME","Business support organisation","General public"] },
+            { label:"Responsible Partner", key:"partner", type:"select", opts:["NIMRD","IO-BAS","UKR-SCES","TUBITAK","TUDAV","Mare Nostrum"] },
+            { label:"Target Audience", key:"audience", type:"select", opts:["National public authority","Regional public authority","Local public authority","Higher education and research organisations","Interest groups including NGOs","Education / training center and school","Sectoral agency","SME","Business support organisation","General public"] },
             { label:"Area of Interest", key:"aoi", type:"select", opts:["Protection of marine ecosystems and biodiversity","Water Quality Monitoring","Environmental protection","Biodiversity Conservation","Environmental monitoring and data-driven decisions","Policy development and regulatory implementation","Maritime Transport","Nature management","Citizen Science","Climate change impacts, adaptation and resilience","Sustainable fisheries, aquaculture and blue economy","Other"] },
-            { label:"Thematic Expertise", key:"expertise" },
+            { label:"Thematic Expertise", key:"expertise", type:"select", opts:["Marine ecology and biodiversity","Water quality and eutrophication","Marine pollution and contaminants","Coastal zone and marine management","Data analysis, GIS and modelling","Digital tools and environmental technologies","Marine and environmental policy","Environmental monitoring and sampling","Climate change and marine pressures","Maritime spatial planning and ICZM","Environmental risk and impact assessment","Socio-economic analysis and valuation","Emergency response and marine incidents","Cross-border cooperation and coordination","Communication, outreach and public awareness","Stakeholder engagement and governance"] },
             { label:"Sub-Region", key:"subregion", type:"select", opts:["North-Western Black Sea","Western Black Sea","Southern Black Sea","Eastern Black Sea","Northern Black Sea","South-Western Black Sea","South-Eastern Black Sea","North-Eastern Black Sea"] },
             { label:"Marine Unit (MU)", key:"mu", type:"select", opts:["All Waters","Marine Waters","Coastal waters","Transitional Waters"] },
-            { label:"Responsible Partner", key:"partner", type:"select", opts:["NIMRD","IO-BAS","UKR-SCES","TUBITAK","TUDAV","Mare Nostrum"] },
           ].map(f => (
-            <div key={f.key} style={S.formGroup}>
+            <div key={f.key} style={{ ...S.formGroup, ...(f.span===2?{gridColumn:"1/-1"}:{}) }}>
               <label style={S.label}>{f.label}</label>
               {f.type === "select" ? (
                 <select style={S.input} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}>
@@ -349,12 +374,13 @@ export default function App() {
                   {f.opts.map(o => <option key={o}>{o}</option>)}
                 </select>
               ) : (
-                <input style={S.input} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
+                <input style={S.input} defaultValue={form[f.key]} placeholder={f.placeholder} key={f.key + (editing||'new')} onBlur={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
               )}
             </div>
           ))}
         </div>
 
+        {/* SECTION 4: Scoring */}
         <div style={{ fontWeight:700, fontSize:12, color:"#64748b", letterSpacing:"0.06em", textTransform:"uppercase", margin:"18px 0 10px" }}>Scoring (Power/Interest Matrix)</div>
         <div style={S.formGrid}>
           {[
@@ -366,14 +392,51 @@ export default function App() {
               <input type="range" min="1" max="10" value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: Number(e.target.value) }))} style={{ width:"100%", accentColor:"#0a3d62" }} />
             </div>
           ))}
-          <div style={{ ...S.formGroup, gridColumn:"1/-1" }}>
-            <label style={S.label}>Resulting Category</label>
-            <div>
-              {(() => { const cat = getCategory(form.influence, form.impact); const c = CATEGORY_COLOR[cat]; return <span style={{ ...S.pill(c.bg, c.text), fontSize:13, padding:"4px 14px" }}>● {cat}</span>; })()}
-            </div>
+        </div>
+        <div style={{ ...S.formGroup, gridColumn:"1/-1" }}>
+          <label style={S.label}>Resulting Category</label>
+          <div>
+            {(() => { const cat = getCategory(form.influence, form.impact); const c = CATEGORY_COLOR[cat]; return <span style={{ ...S.pill(c.bg, c.text), fontSize:13, padding:"4px 14px" }}>● {cat}</span>; })()}
           </div>
         </div>
 
+        {/* Justification */}
+        <div style={{ fontWeight:700, fontSize:12, color:"#64748b", letterSpacing:"0.06em", textTransform:"uppercase", margin:"18px 0 10px" }}>Justification</div>
+        <div style={S.formGrid}>
+          {[
+            { label:"Justification", key:"comments", type:"select", span:2, opts:["Key decision-maker; permits and reporting","Controls marine infrastructure","High exposure to outcomes; low policy influence","Technical expertise; collaboration potential","Interested, low influence and impact"] },
+          ].map(f => (
+            <div key={f.key} style={{ ...S.formGroup, ...(f.span===2?{gridColumn:"1/-1"}:{}) }}>
+              <label style={S.label}>{f.label}</label>
+              <select style={S.input} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}>
+                <option value="">Select…</option>
+                {f.opts.map(o => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+          ))}
+        </div>
+        {/* SECTION 3: Communication */}
+        <div style={{ fontWeight:700, fontSize:12, color:"#64748b", letterSpacing:"0.06em", textTransform:"uppercase", margin:"18px 0 10px" }}>Communication</div>
+        <div style={S.formGrid}>
+          {[
+            { label:"Engagement & Communication Strategy", key:"engagement_strategy", type:"select", span:2, opts:["Information and awareness raising","Consultation and feedback collection","Co-creation and participatory processes","Policy dialogue and coordination","Technical training and capacity building","Scientific collaboration and knowledge exchange","Business and innovation support","Public engagement and citizen involvement","Data sharing and decision-support access","Education and learning activities","Networking and community building","Demonstration and pilot activities","Emergency communication and alerts","Cross-border coordination meetings","Online meetings and webinars","Public awareness campaigns","Dissemination of results and best practices","Cross-border and regional cooperation"] },
+            { label:"Example Actions", key:"example_actions", type:"select", span:2, opts:["Include in planning meetings and reporting process","Regular briefings and strategic updates","Thematic workshops and structured feedback on measures and tools","Access to and exchange of data, indicators, and research outputs","Information dissemination through newsletters and awareness-raising events"] },
+          ].map(f => (
+            <div key={f.key} style={{ ...S.formGroup, ...(f.span===2?{gridColumn:"1/-1"}:{}) }}>
+              <label style={S.label}>{f.label}</label>
+              {f.type === "select" ? (
+                <select style={S.input} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}>
+                  <option value="">Select…</option>
+                  {f.opts.map(o => <option key={o}>{o}</option>)}
+                </select>
+              ) : (
+                <textarea style={{ ...S.input, height:70, resize:"vertical" }} value={form[f.key]} placeholder={f.placeholder} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* SECTION 5: Contact & Admin */}
         <div style={{ fontWeight:700, fontSize:12, color:"#64748b", letterSpacing:"0.06em", textTransform:"uppercase", margin:"18px 0 10px" }}>Contact & Admin</div>
         <div style={S.formGrid}>
           {[
@@ -381,18 +444,16 @@ export default function App() {
             { label:"Website", key:"website", placeholder:"https://…" },
             { label:"GDPR Consent", key:"gdpr", type:"select", opts:["YES","NO","PENDING"] },
             { label:"Status", key:"status", type:"select", opts:["Active","Potential","Pending","Inactive"] },
-            { label:"Comments / Justification", key:"comments", span:2 },
           ].map(f => (
-            <div key={f.key} style={{ ...S.formGroup, gridColumn: f.span === 2 ? "1 / -1" : undefined }}>
+            <div key={f.key} style={{ ...S.formGroup, ...(f.span===2?{gridColumn:"1/-1"}:{}) }}>
               <label style={S.label}>{f.label}</label>
               {f.type === "select" ? (
                 <select style={S.input} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}>
+                  <option value="">Select…</option>
                   {f.opts.map(o => <option key={o}>{o}</option>)}
                 </select>
-              ) : f.span === 2 ? (
-                <textarea style={{ ...S.input, height:70, resize:"vertical" }} value={form[f.key]} placeholder={f.placeholder} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
               ) : (
-                <input style={S.input} value={form[f.key]} placeholder={f.placeholder} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
+                <input style={S.input} defaultValue={form[f.key]} placeholder={f.placeholder} key={f.key + (editing||'new')} onBlur={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
               )}
             </div>
           ))}
@@ -548,7 +609,12 @@ export default function App() {
                 { label:"Category", field:"_cat", w:130 },
                 { label:"Partner", field:"partner", w:80 },
                 { label:"Status", field:"status", w:80 },
-                { label:"GDPR", field:"gdpr", w:70 },
+            { label:"Sub-Region", field:"subregion", w:160 },
+            { label:"Marine Units", field:"mu", w:120 },
+            { label:"Thematic Expertise", field:"expertise", w:180 },
+            { label:"Engagement Strategy", field:"engagement_strategy", w:200 },
+            { label:"Example Actions", field:"example_actions", w:200 },
+            { label:"Justification", field:"comments", w:200 },
               ].map(col => (
                 <th key={col.field} style={{ ...S.th, width:col.w, minWidth:col.w }} onClick={() => col.field !== "_cat" && sortBy(col.field)}>
                   {col.label}{col.field !== "_cat" && <SortIcon field={col.field} />}
@@ -564,7 +630,6 @@ export default function App() {
               const cat = getCategory(row.influence, row.impact);
               const cc = CATEGORY_COLOR[cat];
               const sc = STATUS_COLOR[row.status] || STATUS_COLOR["Inactive"];
-              const gc = GDPR_COLOR[row.gdpr] || GDPR_COLOR["PENDING"];
               const isSelected = selected?.id === row.id;
               return (
                 <tr key={row.id} style={S.tr(isSelected)} onClick={() => setSelected(isSelected ? null : row)} onMouseEnter={e=>e.currentTarget.style.background="#f8fafc"} onMouseLeave={e=>e.currentTarget.style.background=isSelected?"#eff6ff":"transparent"}>
@@ -579,7 +644,6 @@ export default function App() {
                   <td style={S.td(isSelected)}><span style={{ ...S.pill(cc.bg, cc.text), fontSize:10 }}>● {cat}</span></td>
                   <td style={S.td(isSelected)}><span style={{ fontSize:11 }}>{row.partner}</span></td>
                   <td style={S.td(isSelected)}><span style={{ ...S.pill(sc.bg, sc.text), fontSize:10 }}>{row.status}</span></td>
-                  <td style={S.td(isSelected)}><span style={{ ...S.pill(gc.bg, gc.text), fontSize:10 }}>{row.gdpr}</span></td>
                 </tr>
               );
             })}
@@ -596,7 +660,7 @@ export default function App() {
     <div style={S.app}>
       <header style={S.header}>
         <div style={S.logo}>
-          <img src="/logo.png" alt="ANEMONE PLUS" style={{height:50, width:"auto"}} />
+          <img src="/anemoneplus-db/logo.png" alt="ANEMONE PLUS" style={{height:50, width:"auto"}} />
           <div>
             <div style={S.logoText}>ANEMONE PLUS</div>
             <div style={S.logoSub}>BSB00949 · Stakeholder Database · Output 1.1</div>
