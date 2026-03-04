@@ -1,4 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  'https://hdhmgselnxdsqcxciupp.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkaG1nc2Vsbnhkc3FjeGNpdXBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA5MjM4NjksImV4cCI6MjA1NjQ5OTg2OX0.bYMzSSZMRi0cDSBpRSxGEaAJCXbdp_i6Q9CgDRRzBek'
+);
+
+
 
 // ── Seed data from UkrSCES template ────────────────────────────────────────
 const SEED = [
@@ -70,6 +78,12 @@ export default function App() {
   const [selected, setSelected] = useState(null);
   const [toast, setToast] = useState(null);
   const [nextId, setNextId] = useState(SEED.length + 1);
+
+  useEffect(() => {
+    supabase.from('stakeholders').select('*').then(({ data: rows, error }) => {
+      if (!error && rows && rows.length > 0) setData(rows);
+    });
+  }, []);
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
