@@ -156,9 +156,9 @@ export default function App() {
       const v = c === "category" ? getCategory(r.influence, r.impact) : (r[c] ?? "");
       return `"${String(v).replace(/"/g,'""')}"`;
     }).join(","))];
-    const blob = new Blob([rows.join("\n")], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "ANEMONE_PLUS_Stakeholder_Database.csv"; a.click();
+    const csv = rows.join("\n");
+    const uri = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+    const a = document.createElement("a"); a.href = uri; a.download = "ANEMONE_PLUS_Stakeholder_Database.csv"; document.body.appendChild(a); a.click(); document.body.removeChild(a);
     showToast("CSV exported ✓");
   }
 
@@ -212,84 +212,262 @@ export default function App() {
   };
 
   // ── STATS VIEW ────────────────────────────────────────────────────────────
-  const StatsView = () => (
-    <div>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginBottom:20 }}>
-        {[
-          { label:"Total Stakeholders", val:stats.total, color:"#0a3d62" },
-          { label:"Manage Closely", val:stats.byCategory["Manage closely"]||0, color:"#ef4444" },
-          { label:"Countries", val:Object.keys(stats.byCountry).length, color:"#0e7490" },
-          { label:"Active", val:stats.byStatus["Active"]||0, color:"#065f46" },
-        ].map(s => (
-          <div key={s.label} style={S.statCard}>
-            <div style={{ ...S.statNum, color:s.color }}>{s.val}</div>
-            <div style={S.statLabel}>{s.label}</div>
+  const StatsView = () => {
+    // 1. GDPR counts
+    const gdprYes     = data.filter(r => r.gdpr === "YES").length;
+    const gdprNo      = data.filter(r => r.gdpr === "NO").length;
+    const gdprPending = data.filter(r => r.gdpr === "PENDING").length;
+
+    // 2. byPartner
+    const byPartner = {};
+    data.forEach(r => { byPartner[r.partner] = (byPartner[r.partner] || 0) + 1; });
+
+    // 3. subregions
+    const subregions = [
+      "North-Western Black Sea", "Western Black Sea", "Southern Black Sea", "Eastern Black Sea",
+      "Northern Black Sea", "South-Western Black Sea", "South-Eastern Black Sea", "North-Eastern Black Sea",
+    ];
+
+    // 4. bySub
+    const bySub = {};
+    data.forEach(r => { bySub[r.subregion] = (bySub[r.subregion] || 0) + 1; });
+
+    // 5. alerts
+    const alerts = [];
+    data.forEach(r => {
+      if (getCategory(r.influence, r.impact) === "Manage closely" && !r.contact)
+        alerts.push({ color:"#ef4444", bg:"#fee2e2", label:"Missing Contact", msg:r.name });
+    });
+    data.forEach(r => {
+      if (r.influence >= 8 && r.gdpr === "PENDING")
+        alerts.push({ color:"#f59e0b", bg:"#fef3c7", label:"GDPR Pending (high influence)", msg:`${r.name} — influence ${r.influence}` });
+    });
+    subregions.forEach(sub => {
+      if (!bySub[sub])
+        alerts.push({ color:"#3b82f6", bg:"#dbeafe", label:"Uncovered Sub-Region", msg:sub });
+    });
+
+    // Mendelow SVG dimensions
+    const W = 320, H = 260, PAD = 36;
+    const plotW = W - PAD * 2;
+    const plotH = H - PAD * 2;
+    const toX = v => PAD + ((v - 1) / 9) * plotW;
+    const toY = v => PAD + plotH - ((v - 1) / 9) * plotH;
+    const thX = toX(7);
+    const thY = toY(7);
+
+    return (
+      <div>
+        {/* KPI Cards — 8 cards, 4 per row */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:20 }}>
+          {[
+            { label:"Total Stakeholders", val:stats.total,                              icon:"👥", color:"#0a3d62" },
+            { label:"Manage Closely",     val:stats.byCategory["Manage closely"]||0,   icon:"🎯", color:"#ef4444" },
+            { label:"Countries Covered",  val:Object.keys(stats.byCountry).length,     icon:"🌍", color:"#0e7490" },
+            { label:"Active",             val:stats.byStatus["Active"]||0,             icon:"✅", color:"#065f46" },
+            { label:"GDPR Confirmed",     val:gdprYes,                                 icon:"🔒", color:"#16a34a" },
+            { label:"GDPR Pending",       val:gdprPending,                             icon:"⏳", color:"#d97706" },
+            { label:"Partners",           val:Object.keys(byPartner).length,           icon:"🤝", color:"#7c3aed" },
+            { label:"Priority Alerts",    val:alerts.length,                           icon:"⚠️", color:alerts.length > 0 ? "#dc2626" : "#065f46" },
+          ].map(s => (
+            <div key={s.label} style={{ ...S.statCard, borderLeft:`4px solid ${s.color}` }}>
+              <div style={{ fontSize:20, marginBottom:4 }}>{s.icon}</div>
+              <div style={{ ...S.statNum, color:s.color, fontSize:28 }}>{s.val}</div>
+              <div style={S.statLabel}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Priority Alerts */}
+        {alerts.length > 0 && (
+          <div style={{ ...S.card, marginBottom:18, borderLeft:"4px solid #ef4444" }}>
+            <div style={{ fontWeight:700, fontSize:14, marginBottom:12, color:"#991b1b" }}>⚠️ Priority Alerts ({alerts.length})</div>
+            {alerts.map((a, i) => (
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"7px 12px", background:a.bg, borderRadius:8, marginBottom:6, fontSize:12 }}>
+                <span style={{ fontWeight:700, color:a.color, whiteSpace:"nowrap", minWidth:200 }}>{a.label}</span>
+                <span style={{ color:"#334155" }}>{a.msg}</span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
-        <div style={S.card}>
-          <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>By Engagement Category</div>
-          {Object.entries(stats.byCategory).map(([cat,n]) => {
-            const c = CATEGORY_COLOR[cat];
-            return (
-              <div key={cat} style={{ marginBottom:10 }}>
+        )}
+
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
+          {/* Mendelow Power/Interest Matrix */}
+          <div style={S.card}>
+            <div style={{ fontWeight:700, fontSize:14, marginBottom:10, color:"#0a3d62" }}>Mendelow Power / Interest Matrix</div>
+            <svg width={W} height={H} style={{ display:"block", maxWidth:"100%" }}>
+              {/* Quadrant backgrounds */}
+              <rect x={PAD}  y={PAD}  width={thX-PAD}   height={thY-PAD}   fill="#dbeafe" /> {/* top-left:    Consult With   */}
+              <rect x={thX}  y={PAD}  width={W-PAD-thX} height={thY-PAD}   fill="#fee2e2" /> {/* top-right:   Manage Closely */}
+              <rect x={PAD}  y={thY}  width={thX-PAD}   height={H-PAD-thY} fill="#f0fdf4" /> {/* bottom-left: Keep Informed  */}
+              <rect x={thX}  y={thY}  width={W-PAD-thX} height={H-PAD-thY} fill="#fef9c3" /> {/* bottom-right: Keep Satisfied */}
+              {/* Threshold lines */}
+              <line x1={thX} y1={PAD} x2={thX} y2={H-PAD} stroke="#94a3b8" strokeWidth={1} strokeDasharray="4,3" />
+              <line x1={PAD} y1={thY} x2={W-PAD} y2={thY} stroke="#94a3b8" strokeWidth={1} strokeDasharray="4,3" />
+              {/* Border */}
+              <rect x={PAD} y={PAD} width={plotW} height={plotH} fill="none" stroke="#cbd5e1" strokeWidth={1} />
+              {/* Quadrant labels */}
+              <text x={PAD+5}  y={PAD+13}    fontSize={8} fill="#1e40af" fontWeight="700">Consult With</text>
+              <text x={thX+5}  y={PAD+13}    fontSize={8} fill="#991b1b" fontWeight="700">Manage Closely</text>
+              <text x={PAD+5}  y={H-PAD-5}   fontSize={8} fill="#166534" fontWeight="700">Keep Informed</text>
+              <text x={thX+5}  y={H-PAD-5}   fontSize={8} fill="#92400e" fontWeight="700">Keep Satisfied</text>
+              {/* Axis labels */}
+              <text x={W/2}   y={H-4}  fontSize={9} fill="#64748b" textAnchor="middle">Influence / Interest →</text>
+              <text x={10}    y={H/2}  fontSize={9} fill="#64748b" textAnchor="middle" transform={`rotate(-90,10,${H/2})`}>Impact →</text>
+              {/* Axis ticks */}
+              {[1,3,5,7,9].map(v => (
+                <g key={v}>
+                  <text x={toX(v)} y={H-PAD+11} fontSize={8} fill="#94a3b8" textAnchor="middle">{v}</text>
+                  <text x={PAD-5}  y={toY(v)+3}  fontSize={8} fill="#94a3b8" textAnchor="end">{v}</text>
+                </g>
+              ))}
+              {/* Data points */}
+              {data.map(r => {
+                const cat = getCategory(r.influence, r.impact);
+                const col = CATEGORY_COLOR[cat].dot;
+                return (
+                  <circle key={r.id} cx={toX(r.influence)} cy={toY(r.impact)} r={5}
+                    fill={col} fillOpacity={0.8} stroke="#fff" strokeWidth={1.2}>
+                    <title>{r.name} (Influence:{r.influence}, Impact:{r.impact})</title>
+                  </circle>
+                );
+              })}
+            </svg>
+          </div>
+
+          {/* GDPR Status */}
+          <div style={S.card}>
+            <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>GDPR Consent Status</div>
+            <div style={{ display:"flex", gap:10, marginBottom:14 }}>
+              {[
+                { label:"Confirmed", val:gdprYes,     bg:"#d1fae5", text:"#065f46" },
+                { label:"Pending",   val:gdprPending,  bg:"#fef3c7", text:"#92400e" },
+                { label:"No",        val:gdprNo,       bg:"#fee2e2", text:"#991b1b" },
+              ].map(g => (
+                <div key={g.label} style={{ flex:1, background:g.bg, borderRadius:10, padding:"12px 10px", textAlign:"center" }}>
+                  <div style={{ fontSize:26, fontWeight:800, color:g.text }}>{g.val}</div>
+                  <div style={{ fontSize:11, color:g.text, fontWeight:600, marginTop:2 }}>{g.label}</div>
+                </div>
+              ))}
+            </div>
+            {/* Stacked bar */}
+            <div style={{ borderRadius:999, overflow:"hidden", height:10, display:"flex" }}>
+              {gdprYes     > 0 && <div style={{ width:`${gdprYes/stats.total*100}%`,     background:"#22c55e" }} />}
+              {gdprPending > 0 && <div style={{ width:`${gdprPending/stats.total*100}%`, background:"#f59e0b" }} />}
+              {gdprNo      > 0 && <div style={{ width:`${gdprNo/stats.total*100}%`,      background:"#ef4444" }} />}
+            </div>
+            <div style={{ display:"flex", gap:14, marginTop:8, fontSize:11, color:"#64748b" }}>
+              {[["#22c55e","Yes"],["#f59e0b","Pending"],["#ef4444","No"]].map(([col,lbl]) => (
+                <span key={lbl} style={{ display:"flex", alignItems:"center", gap:4 }}>
+                  <span style={{ width:10, height:10, borderRadius:2, background:col, display:"inline-block" }} />{lbl}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
+          {/* By Status */}
+          <div style={S.card}>
+            <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>By Status</div>
+            {Object.entries(stats.byStatus).map(([s,n]) => {
+              const c = STATUS_COLOR[s] || STATUS_COLOR["Inactive"];
+              return (
+                <div key={s} style={{ display:"flex", alignItems:"center", marginBottom:10 }}>
+                  <span style={{ ...S.pill(c.bg, c.text), minWidth:72, textAlign:"center" }}>{s}</span>
+                  <div style={{ flex:1, margin:"0 12px", background:"#f1f5f9", borderRadius:999, overflow:"hidden", height:7 }}>
+                    <div style={S.progressBar(n/stats.total*100, c.text)} />
+                  </div>
+                  <span style={{ fontSize:12, fontWeight:700, color:"#334155", minWidth:20, textAlign:"right" }}>{n}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Partner Workload */}
+          <div style={S.card}>
+            <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>Partner Workload</div>
+            {Object.entries(byPartner).sort((a,b) => b[1]-a[1]).map(([p,n]) => (
+              <div key={p} style={{ marginBottom:10 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:4 }}>
-                  <span style={{ fontWeight:600 }}>{cat}</span>
+                  <span style={{ fontWeight:600 }}>{p}</span>
+                  <span style={{ color:"#64748b" }}>{n}</span>
+                </div>
+                <div style={{ background:"#f1f5f9", borderRadius:999, overflow:"hidden", height:7 }}>
+                  <div style={S.progressBar(n/stats.total*100, "#7c3aed")} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
+          {/* By Engagement Category */}
+          <div style={S.card}>
+            <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>By Engagement Category</div>
+            {Object.entries(stats.byCategory).map(([cat,n]) => {
+              const c = CATEGORY_COLOR[cat];
+              return (
+                <div key={cat} style={{ marginBottom:10 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:4 }}>
+                    <span style={{ fontWeight:600 }}>{cat}</span>
+                    <span style={{ color:"#64748b" }}>{n} ({Math.round(n/stats.total*100)}%)</span>
+                  </div>
+                  <div style={{ background:"#f1f5f9", borderRadius:999, overflow:"hidden", height:7 }}>
+                    <div style={S.progressBar(n/stats.total*100, c.dot)} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* By Country */}
+          <div style={S.card}>
+            <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>By Country</div>
+            {Object.entries(stats.byCountry).sort((a,b) => b[1]-a[1]).map(([c,n]) => (
+              <div key={c} style={{ marginBottom:10 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:4 }}>
+                  <span style={{ fontWeight:600 }}>{c}</span>
                   <span style={{ color:"#64748b" }}>{n} ({Math.round(n/stats.total*100)}%)</span>
                 </div>
                 <div style={{ background:"#f1f5f9", borderRadius:999, overflow:"hidden", height:7 }}>
-                  <div style={S.progressBar(n/stats.total*100, c.dot)} />
+                  <div style={S.progressBar(n/stats.total*100, "#0a3d62")} />
                 </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-        <div style={S.card}>
-          <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>By Country</div>
-          {Object.entries(stats.byCountry).sort((a,b)=>b[1]-a[1]).map(([c,n]) => (
-            <div key={c} style={{ marginBottom:10 }}>
-              <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:4 }}>
-                <span style={{ fontWeight:600 }}>{c}</span>
-                <span style={{ color:"#64748b" }}>{n} ({Math.round(n/stats.total*100)}%)</span>
+
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+          {/* By Stakeholder Type */}
+          <div style={S.card}>
+            <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>By Stakeholder Type</div>
+            {Object.entries(stats.byAudience).sort((a,b) => b[1]-a[1]).map(([a,n]) => (
+              <div key={a} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", borderBottom:"1px solid #f1f5f9", fontSize:12 }}>
+                <span style={{ color:"#334155" }}>{a}</span>
+                <span style={{ fontWeight:700, color:"#0a3d62", minWidth:24, textAlign:"right" }}>{n}</span>
               </div>
-              <div style={{ background:"#f1f5f9", borderRadius:999, overflow:"hidden", height:7 }}>
-                <div style={S.progressBar(n/stats.total*100, "#0a3d62")} />
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={S.card}>
-          <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>By Stakeholder Type</div>
-          {Object.entries(stats.byAudience).sort((a,b)=>b[1]-a[1]).map(([a,n]) => (
-            <div key={a} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", borderBottom:"1px solid #f1f5f9", fontSize:12 }}>
-              <span style={{ color:"#334155" }}>{a}</span>
-              <span style={{ fontWeight:700, color:"#0a3d62", minWidth:24, textAlign:"right" }}>{n}</span>
-            </div>
-          ))}
-        </div>
-        <div style={S.card}>
-          <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>By Status</div>
-          {Object.entries(stats.byStatus).map(([s,n]) => {
-            const c = STATUS_COLOR[s] || STATUS_COLOR["Inactive"];
-            return (
-              <div key={s} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-                <span style={{ ...S.pill(c.bg, c.text) }}>{s}</span>
-                <div style={{ flex:1, margin:"0 12px", background:"#f1f5f9", borderRadius:999, overflow:"hidden", height:7 }}>
-                  <div style={S.progressBar(n/stats.total*100, c.text)} />
+            ))}
+          </div>
+
+          {/* Sub-Region Coverage Checklist */}
+          <div style={S.card}>
+            <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>Sub-Region Coverage</div>
+            {subregions.map(sub => {
+              const count = bySub[sub] || 0;
+              return (
+                <div key={sub} style={{ display:"flex", alignItems:"center", gap:10, padding:"6px 0", borderBottom:"1px solid #f1f5f9", fontSize:12 }}>
+                  <span style={{ fontSize:13 }}>{count > 0 ? "✅" : "⬜"}</span>
+                  <span style={{ flex:1, color: count > 0 ? "#334155" : "#94a3b8" }}>{sub}</span>
+                  {count > 0 && <span style={{ fontWeight:700, color:"#0a3d62" }}>{count}</span>}
                 </div>
-                <span style={{ fontSize:12, fontWeight:700, color:"#334155" }}>{n}</span>
-              </div>
-            );
-          })}
-          <div style={{ marginTop:16, padding:"12px 14px", background:"#fffbeb", borderRadius:8, border:"1px solid #fde68a" }}>
-            <div style={{ fontSize:11, fontWeight:700, color:"#92400e", marginBottom:4 }}>⚠ GDPR Pending</div>
-            <div style={{ fontSize:13, color:"#78350f" }}>{data.filter(r=>r.gdpr==="PENDING").length} stakeholders awaiting GDPR consent confirmation</div>
+              );
+            })}
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // ── FORM VIEW ─────────────────────────────────────────────────────────────
   const FormView = () => (
@@ -547,8 +725,6 @@ export default function App() {
                 { label:"Imp.", field:"impact", w:50 },
                 { label:"Category", field:"_cat", w:130 },
                 { label:"Partner", field:"partner", w:80 },
-                { label:"Status", field:"status", w:80 },
-                { label:"GDPR", field:"gdpr", w:70 },
               ].map(col => (
                 <th key={col.field} style={{ ...S.th, width:col.w, minWidth:col.w }} onClick={() => col.field !== "_cat" && sortBy(col.field)}>
                   {col.label}{col.field !== "_cat" && <SortIcon field={col.field} />}
@@ -563,8 +739,6 @@ export default function App() {
             {filtered.map(row => {
               const cat = getCategory(row.influence, row.impact);
               const cc = CATEGORY_COLOR[cat];
-              const sc = STATUS_COLOR[row.status] || STATUS_COLOR["Inactive"];
-              const gc = GDPR_COLOR[row.gdpr] || GDPR_COLOR["PENDING"];
               const isSelected = selected?.id === row.id;
               return (
                 <tr key={row.id} style={S.tr(isSelected)} onClick={() => setSelected(isSelected ? null : row)} onMouseEnter={e=>e.currentTarget.style.background="#f8fafc"} onMouseLeave={e=>e.currentTarget.style.background=isSelected?"#eff6ff":"transparent"}>
@@ -578,8 +752,6 @@ export default function App() {
                   <td style={{ ...S.td(isSelected), textAlign:"center" }}><strong style={{ color:"#0a3d62" }}>{row.impact}</strong></td>
                   <td style={S.td(isSelected)}><span style={{ ...S.pill(cc.bg, cc.text), fontSize:10 }}>● {cat}</span></td>
                   <td style={S.td(isSelected)}><span style={{ fontSize:11 }}>{row.partner}</span></td>
-                  <td style={S.td(isSelected)}><span style={{ ...S.pill(sc.bg, sc.text), fontSize:10 }}>{row.status}</span></td>
-                  <td style={S.td(isSelected)}><span style={{ ...S.pill(gc.bg, gc.text), fontSize:10 }}>{row.gdpr}</span></td>
                 </tr>
               );
             })}
