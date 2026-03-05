@@ -15,6 +15,9 @@
 
 <script>
 async function loadMap(){
+
+if(typeof L === "undefined"){console.log("Leaflet not loaded yet");return;}
+
   const url="https://hdhmgselnxdsqcxciupp.supabase.co/rest/v1/stakeholders?select=name,city,country,expertise,lat,lng";
   const res=await fetch(url,{
     headers:{
