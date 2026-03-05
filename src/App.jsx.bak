@@ -20,31 +20,25 @@ function getCategory(influence, impact) {
   return "Keep informed";
 }
 
-
-  function numOrNull(v){
-    if(v===null||v===undefined) return null;
-    const t = String(v).trim();
-    if(t==='') return null;
-    const n = Number(t);
-    return Number.isFinite(n) ? n : null;
-  }
-
 const CATEGORY_COLOR = {
   "Manage closely": { bg: "#fee2e2", text: "#991b1b", dot: "#ef4444" },
   "Keep satisfied": { bg: "#fef9c3", text: "#854d0e", dot: "#f59e0b" },
   "Consult with":   { bg: "#dbeafe", text: "#1e40af", dot: "#3b82f6" },
-  "Keep informed":  { bg: "#f0fdf4", text: "#166534", dot: "#22c55e" }};
+  "Keep informed":  { bg: "#f0fdf4", text: "#166534", dot: "#22c55e" },
+};
 
 const STATUS_COLOR = {
   "Active":   { bg:"#d1fae5", text:"#065f46" },
   "Potential":{ bg:"#dbeafe", text:"#1e40af" },
   "Pending":  { bg:"#fef3c7", text:"#92400e" },
-  "Inactive": { bg:"#f3f4f6", text:"#6b7280" }};
+  "Inactive": { bg:"#f3f4f6", text:"#6b7280" },
+};
 
 const GDPR_COLOR = {
   "YES":     { bg:"#d1fae5", text:"#065f46" },
   "NO":      { bg:"#fee2e2", text:"#991b1b" },
-  "PENDING": { bg:"#fef3c7", text:"#92400e" }};
+  "PENDING": { bg:"#fef3c7", text:"#92400e" },
+};
 
 const PARTNERS = ["All partners", "NIMRD", "IO-BAS", "UKR-SCES", "TUBITAK", "TUDAV", "Mare Nostrum"];
 const COUNTRIES = ["All countries", "Romania", "Bulgaria", "Ukraine", "Turkey", "Georgia"];
@@ -136,21 +130,15 @@ export default function App() {
   }
 
   async function saveForm() {
-    const payload = { ...(form) };
-    payload.lat = numOrNull(payload.lat);
-    payload.lng = numOrNull(payload.lng);
-    payload.influence = Number(payload.influence || 5);
-    payload.impact = Number(payload.impact || 5);
-
     if (!form.name || !form.country) { showToast("Name and Country are required", "error"); return; }
     if (editing) {
-      await supabase.from('stakeholders').update(payload).eq('id', editing);
+      await supabase.from('stakeholders').update(form).eq('id', editing);
       setData(d => d.map(r => r.id === editing ? { ...form, id: editing } : r));
       showToast("Stakeholder updated ✓");
     } else {
       const id = nextId;
       setNextId(id + 1);
-      const { data: inserted } = await supabase.from('stakeholders').insert([payload]).select();
+      const { data: inserted } = await supabase.from('stakeholders').insert([form]).select();
       const newId = inserted?.[0]?.id || id;
       setData(d => [...d, { ...form, id: newId }]);
       showToast("Stakeholder added ✓");
@@ -209,7 +197,8 @@ export default function App() {
         success: { background:"#065f46", color:"#fff", border:"none" },
         danger:  { background:"#fee2e2", color:"#991b1b", border:"1.5px solid #fca5a5" },
         ghost:   { background:"#f8fafc", color:"#334155", border:"1.5px solid #e2e8f0" },
-        teal:    { background:"#0e7490", color:"#fff", border:"none" }};
+        teal:    { background:"#0e7490", color:"#fff", border:"none" },
+      };
       return { ...(map[variant]||map.ghost), padding:"8px 16px", borderRadius:8, cursor:"pointer", fontSize:13, fontWeight:600, display:"flex", alignItems:"center", gap:6, transition:"all 0.15s", letterSpacing:"0.01em" };
     },
     table: { width:"100%", borderCollapse:"collapse", background:"#fff", borderRadius:12, overflow:"hidden", boxShadow:"0 1px 6px rgba(0,0,0,0.08)" },
@@ -226,7 +215,8 @@ export default function App() {
     statNum: { fontSize:36, fontWeight:800, color:"#0a3d62", lineHeight:1 },
     statLabel: { fontSize:12, color:"#64748b", marginTop:4, fontWeight:600 },
     progressBar: (pct, color) => ({ height:7, borderRadius:999, background:color, width:`${pct}%`, transition:"width 0.4s" }),
-    toast: (type) => ({ position:"fixed", bottom:24, right:24, padding:"12px 20px", borderRadius:10, background: type==="error"?"#fee2e2":"#d1fae5", color: type==="error"?"#991b1b":"#065f46", fontWeight:700, fontSize:13, boxShadow:"0 4px 16px rgba(0,0,0,0.15)", zIndex:999, display:"flex", alignItems:"center", gap:8 })};
+    toast: (type) => ({ position:"fixed", bottom:24, right:24, padding:"12px 20px", borderRadius:10, background: type==="error"?"#fee2e2":"#d1fae5", color: type==="error"?"#991b1b":"#065f46", fontWeight:700, fontSize:13, boxShadow:"0 4px 16px rgba(0,0,0,0.15)", zIndex:999, display:"flex", alignItems:"center", gap:8 }),
+  };
 
   // ── STATS VIEW ────────────────────────────────────────────────────────────
   const StatsView = () => (
