@@ -6,8 +6,39 @@
     <title>ANEMONE PLUS Stakeholder Database</title>
     <script type="module" crossorigin src="/anemoneplus-db/assets/index-DQ_A3br1.js"></script>
     <link rel="stylesheet" crossorigin href="/anemoneplus-db/assets/index-DQ3P1g1z.css">
-  </head>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
   <body>
     <div id="root"></div>
-  </body>
+  <div id="map" style="height:500px;margin-top:20px;"></div>
+
+<script>
+async function loadMap(){
+  const url="https://hdhmgselnxdsqcxciupp.supabase.co/rest/v1/stakeholders?select=name,city,country,expertise,lat,lng";
+  const res=await fetch(url,{
+    headers:{
+      apikey:"sb_publishable_QSEsCiwMDvKmmO-zY5zV3w_Ajq_L6X5"
+    }
+  });
+  const data=await res.json();
+
+  const map=L.map('map').setView([43.5,32],5);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© OpenStreetMap'
+  }).addTo(map);
+
+  data.forEach(s=>{
+    if(s.lat && s.lng){
+      L.marker([s.lat,s.lng]).addTo(map)
+      .bindPopup("<b>"+s.name+"</b><br>"+(s.city||"")+", "+(s.country||"")+"<br>"+(s.expertise||""));
+    }
+  });
+}
+
+window.addEventListener("load",loadMap);
+</script>
+
+</body>
 </html>
