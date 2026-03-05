@@ -127,16 +127,21 @@ export default function App() {
 
   function saveForm() {
     if (!form.name || !form.country) { showToast("Name and Country are required", "error"); return; }
+    const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkaG1nc2Vsbnhkc3FjeGNpdXBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA5MjM4NjksImV4cCI6MjA1NjQ5OTg2OX0.bYMzSSZMRi0cDSBpRSxGEaAJCXbdp_i6Q9CgDRRzBek';
+    const BASE = 'https://hdhmgselnxdsqcxciupp.supabase.co/rest/v1/stakeholders';
+    const h = { 'Content-Type': 'application/json', apikey: KEY, Authorization: 'Bearer ' + KEY };
     if (editing) {
-      setData(d => d.map(r => r.id === editing ? { ...form, id: editing } : r));
-      showToast("Stakeholder updated ✓");
+      const { id, ...rest } = form;
+      fetch(BASE + '?id=eq.' + editing, { method: 'PATCH', headers: { ...h, Prefer: 'return=minimal' }, body: JSON.stringify(rest) })
+        .then(() => { setData(d => d.map(r => r.id === editing ? { ...form, id: editing } : r)); showToast("Stakeholder updated ✓"); setView("table"); })
+        .catch(() => showToast("Save failed", "error"));
     } else {
-      const id = nextId;
-      setNextId(id + 1);
-      setData(d => [...d, { ...form, id }]);
-      showToast("Stakeholder added ✓");
+      const { id, ...rest } = form;
+      fetch(BASE, { method: 'POST', headers: { ...h, Prefer: 'return=representation' }, body: JSON.stringify(rest) })
+        .then(r => r.json())
+        .then(rows => { setData(d => [...d, rows[0] || { ...form, id: nextId }]); setNextId(n => n+1); showToast("Stakeholder added ✓"); setView("table"); })
+        .catch(() => showToast("Save failed", "error"));
     }
-    setView("table");
   }
 
   function deleteRow(id) {
