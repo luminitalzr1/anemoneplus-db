@@ -34,7 +34,10 @@ if(typeof L === "undefined"){console.log("Leaflet not loaded yet");return;}
 
   data.forEach(s=>{
     if(s.lat && s.lng){
-      L.marker([s.lat,s.lng]).addTo(map)
+      if (s.lat != null && s.lng != null) {
+      L.marker([s.lat, s.lng]).addTo(map)
+        .bindPopup(`<b>${s.name || ''}</b><br>${s.city || ''}, ${s.country || ''}`);
+    }
       .bindPopup("<b>"+s.name+"</b><br>"+(s.city||"")+", "+(s.country||"")+"<br>"+(s.expertise||""));
     }
   });
