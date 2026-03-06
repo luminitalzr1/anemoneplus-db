@@ -1,15 +1,4 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ANEMONE PLUS Stakeholder Database</title>
-    <script type="module" crossorigin src="/anemoneplus-db/assets/index-working.js"></script>
-    <link rel="stylesheet" crossorigin href="/anemoneplus-db/assets/index-DQ3P1g1z.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  <script>
+<script>
 (function () {
   function tableToCSV(table) {
     const rows = Array.from(table.querySelectorAll("tr"));
@@ -70,6 +59,3 @@
   }, true);
 })();
 </script>
-
-</body>
-</html>
