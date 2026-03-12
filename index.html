@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ANEMONE PLUS Stakeholder Database</title>
+    <script type="module" crossorigin src="/anemoneplus-db/assets/index-working.js"></script>
+    <link rel="stylesheet" crossorigin href="/anemoneplus-db/assets/index-DQ3P1g1z.css">
+    <script>
+      document.addEventListener('keydown', function(e) {
+        if (e.target.matches('input[placeholder*="Search"]')) {
+          setTimeout(function() {
+            var found = document.querySelector('input[placeholder*="Search"]');
+            if (found && document.activeElement !== found) {
+              found.focus();
+              found.setSelectionRange(found.value.length, found.value.length);
+            }
+          }, 50);
+        }
+      }, true);
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
