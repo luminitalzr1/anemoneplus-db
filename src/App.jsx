@@ -50,7 +50,7 @@ const STATUSES = ["All statuses", "Active", "Potential", "Pending", "Inactive"];
 const EMPTY = { country:"", name:"", city:"", lat:"", lng:"", address:"", audience:"", aoi:"", expertise:"", subregion:"", mu:"", influence:5, impact:5, contact:"", gdpr:"PENDING", status:"Pending", website:"", partner:"", comments:"" };
 
 export default function App() {
-  const [data, setData] = useState(SEED);
+  const [data, setData] = useState([]);
   const [view, setView] = useState("table"); // table | form | stats
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
@@ -64,7 +64,7 @@ export default function App() {
   const [sortDir, setSortDir] = useState("asc");
   const [selected, setSelected] = useState(null);
   const [toast, setToast] = useState(null);
-  const [nextId, setNextId] = useState(SEED.length + 1);
+  const [nextId, setNextId] = useState(1);
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
