@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 
 const API_URL = "https://script.google.com/macros/s/AKfycbwR2zrhnt3KQVlWvMit34ffcIUKJveUW2qty6jXkXc3k3rn9bC8oBPaht_lBR_hMh5qMA/exec";
 
+const WRITE_PIN = "2025";
+
 async function apiGet() {
   const res = await fetch(API_URL);
   if (!res.ok) throw new Error("Load failed: "+res.status);
