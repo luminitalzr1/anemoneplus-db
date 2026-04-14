@@ -16,6 +16,24 @@ async function apiPost(body) {
 
 
 // ── Seed data from UkrSCES template ────────────────────────────────────────
+const SEED = [
+  { id:1, country:"Ukraine", name:"Ukrainian Scientific Centre of Ecology of the Sea (UkrSCES)", city:"Odesa", lat:46.4397, lng:30.7692, address:"65009, Ukraine, Odesa, Frantsuzsky Blvd., 89", audience:"Higher education and research organisations", aoi:"Water Quality Monitoring", expertise:"Research Institute", subregion:"North-Western Black Sea", mu:"Marine Waters", influence:10, impact:3, contact:"yura.oleynik209@gmail.com", gdpr:"YES", status:"Active", website:"https://sea.gov.ua", partner:"UKR-SCES", comments:"Project partner — lead for UKR stakeholders" },
+  { id:2, country:"Ukraine", name:"State Ecological Inspectorate of the South-Western District", city:"Odesa", lat:46.4067, lng:30.7181, address:"65114, Ukraine, Odesa, Lustdorfska road, 22", audience:"Local public authority", aoi:"Water Quality Monitoring", expertise:"Local / Regional Authority", subregion:"North-Western Black Sea", mu:"All Waters", influence:10, impact:8, contact:"sw@dei.gov.ua", gdpr:"YES", status:"Potential", website:"https://sw.dei.gov.ua", partner:"UKR-SCES", comments:"Key decision-maker; permits and reporting" },
+  { id:3, country:"Ukraine", name:"State Ecological Inspection of Ukraine", city:"Kyiv", lat:50.4231, lng:30.5284, address:"01042, Kyiv, Novopecherskyi Lane 3", audience:"National public authority", aoi:"Environmental protection", expertise:"National Authority / Ministry", subregion:"North-Western Black Sea", mu:"All Waters", influence:10, impact:8, contact:"info@dei.gov.ua", gdpr:"YES", status:"Potential", website:"https://dei.gov.ua/", partner:"UKR-SCES", comments:"Key decision-maker" },
+  { id:4, country:"Ukraine", name:"Ministry of Economy, Environment and Agriculture of Ukraine", city:"Kyiv", lat:50.4474, lng:30.5342, address:"01008, Ukraine, Kyiv, M. Hrushevskoho Street, 12/2", audience:"National public authority", aoi:"Environmental protection", expertise:"National Authority / Ministry", subregion:"North-Western Black Sea", mu:"All Waters", influence:10, impact:10, contact:"meconomy@me.gov.ua", gdpr:"YES", status:"Potential", website:"https://me.gov.ua/", partner:"UKR-SCES", comments:"Key decision-maker; highest impact" },
+  { id:5, country:"Ukraine", name:"Dept. of Ecology and Natural Resources of Kherson Regional State Administration", city:"Kherson", lat:46.6411, lng:32.6144, address:"73000, Kherson, pl. Svobody, 1", audience:"National public authority", aoi:"Environmental protection", expertise:"National Authority / Ministry", subregion:"North-Western Black Sea", mu:"All Waters", influence:10, impact:8, contact:"kanc@khoda.gov.ua", gdpr:"YES", status:"Potential", website:"", partner:"UKR-SCES", comments:"" },
+  { id:6, country:"Ukraine", name:"Dept. of Ecology and Natural Resources of Odesa Regional State Administration", city:"Odesa", lat:46.466, lng:30.7466, address:"83 Kanatna St., Odesa, 65107", audience:"National public authority", aoi:"Environmental protection", expertise:"National Authority / Ministry", subregion:"North-Western Black Sea", mu:"All Waters", influence:10, impact:8, contact:"ecolog@od.gov.ua", gdpr:"YES", status:"Potential", website:"http://ecology.od.gov.ua/", partner:"UKR-SCES", comments:"" },
+  { id:7, country:"Ukraine", name:"Odesa I.I. Mechnikov National University", city:"Odesa", lat:46.4876, lng:30.7313, address:"65082, Ukraine, Odesa, Zmienka Vsevoloda Street, 2", audience:"Higher education and research organisations", aoi:"Environmental protection", expertise:"Educational institution", subregion:"North-Western Black Sea", mu:"All Waters", influence:8, impact:3, contact:"rector@onu.edu.ua", gdpr:"PENDING", status:"Pending", website:"https://onu.edu.ua/uk", partner:"UKR-SCES", comments:"Technical expertise; collaboration potential" },
+  { id:8, country:"Ukraine", name:"National Academy of Sciences of Ukraine", city:"Kyiv", lat:50.4449, lng:30.5125, address:"01030, Kyiv, Volodymyrska St., 54", audience:"Higher education and research organisations", aoi:"Environmental protection", expertise:"Research network", subregion:"North-Western Black Sea", mu:"All Waters", influence:9, impact:7, contact:"press@nas.gov.ua", gdpr:"PENDING", status:"Pending", website:"www.nas.gov.ua", partner:"UKR-SCES", comments:"Technical expertise; collaboration potential" },
+  { id:9, country:"Ukraine", name:"Institute of Marine Biology of the National Academy of Sciences of Ukraine", city:"Odesa", lat:46.4763, lng:30.7422, address:"65048, Odesa, Pushkinska St., 37", audience:"Higher education and research organisations", aoi:"Biodiversity Conservation", expertise:"Scientific-Research institution", subregion:"North-Western Black Sea", mu:"Marine Waters", influence:8, impact:3, contact:"imb@nas.gov.ua", gdpr:"PENDING", status:"Pending", website:"https://imb.odessa.ua", partner:"UKR-SCES", comments:"" },
+  { id:10, country:"Ukraine", name:"Danube Biosphere Reserve", city:"Vilkovo", lat:45.4065, lng:29.5843, address:"68355, Odesa region, Vilkovo, 134a", audience:"Local public authority", aoi:"Biodiversity Conservation", expertise:"Local / Regional Authority", subregion:"North-Western Black Sea", mu:"All Waters", influence:7, impact:4, contact:"dbr.org.ua@gmail.com", gdpr:"PENDING", status:"Pending", website:"https://www.dbr.org.ua/", partner:"UKR-SCES", comments:"" },
+  { id:11, country:"Ukraine", name:"WWF-Ukraine", city:"Kyiv", lat:50.4496, lng:30.594, address:"02002, Kyiv, Raisy Okipnoi Street, 4", audience:"Interest groups including NGOs", aoi:"Environmental protection", expertise:"Non-governmental organizations (NGOs)", subregion:"North-Western Black Sea", mu:"All Waters", influence:8, impact:1, contact:"ua@wwf.ua", gdpr:"PENDING", status:"Pending", website:"https://wwf.panda.org/", partner:"UKR-SCES", comments:"" },
+  { id:12, country:"Ukraine", name:"ALL-UKRAINIAN ENVIRONMENTAL LEAGUE", city:"Kyiv", lat:50.4368, lng:30.5122, address:"01033, Kyiv, Saksahanskoho vulitsya, 30-v", audience:"Interest groups including NGOs", aoi:"Environmental protection", expertise:"Non-governmental organizations (NGOs)", subregion:"North-Western Black Sea", mu:"All Waters", influence:6, impact:2, contact:"vel@ecoleague.net", gdpr:"PENDING", status:"Pending", website:"https://www.ecoleague.net/", partner:"UKR-SCES", comments:"" },
+  { id:13, country:"Romania", name:"Ministry of Environment, Water and Forests", city:"Bucharest", lat:44.4258, lng:26.0911, address:"Bulevardul Libertății 12, 030167 București", audience:"National public authority", aoi:"Policy development and regulatory implementation", expertise:"Marine and environmental policy", subregion:"North-Western Black Sea", mu:"All Waters", influence:9, impact:9, contact:"", gdpr:"PENDING", status:"Pending", website:"", partner:"NIMRD", comments:"Key decision-maker" },
+  { id:14, country:"Romania", name:"National Administration of Romanian Waters (ANAR)", city:"Bucharest", lat:44.4408, lng:26.0981, address:"Strada Ion Câmpineanu 11, București", audience:"National public authority", aoi:"Environmental monitoring and data-driven decisions", expertise:"Environmental monitoring and sampling", subregion:"North-Western Black Sea", mu:"All Waters", influence:9, impact:9, contact:"", gdpr:"PENDING", status:"Pending", website:"", partner:"NIMRD", comments:"Data sharing and decision-support access" },
+  { id:15, country:"Romania", name:"Danube Delta Biosphere Reserve Administration", city:"Tulcea", lat:45.1804, lng:28.7952, address:"Strada Portului 34a, 827150 Tulcea", audience:"Local public authority", aoi:"Protection of marine ecosystems and biodiversity", expertise:"Marine ecology and biodiversity", subregion:"North-Western Black Sea", mu:"Transitional Waters", influence:5, impact:9, contact:"", gdpr:"PENDING", status:"Pending", website:"", partner:"NIMRD", comments:"Demonstration and pilot activities" },
+  { id:16, country:"Romania", name:"Romanian Coast Guard", city:"Constanța", lat:44.1734, lng:28.6417, address:"21 Zmeurei Avenue, 900433, Constanta", audience:"Regional public authority", aoi:"Risk prevention and response to marine incidents", expertise:"Emergency response and marine incidents", subregion:"North-Western Black Sea", mu:"All Waters", influence:9, impact:9, contact:"ijpf.constanta@mai.gov.ro", gdpr:"PENDING", status:"Pending", website:"https://www.politiadefrontiera.ro/en/structura-teritoriala-coast-guard/", partner:"NIMRD", comments:"Key decision-maker; permits and reporting" },
+];
 
 function getCategory(influence, impact) {
   if (influence >= 7 && impact >= 7) return "Manage closely";
@@ -52,13 +70,14 @@ const STATUSES = ["All statuses", "Active", "Potential", "Pending", "Inactive"];
 const EMPTY = { country:"", name:"", city:"", lat:"", lng:"", address:"", audience:"", aoi:"", expertise:"", subregion:"", mu:"", influence:5, impact:5, contact:"", gdpr:"PENDING", status:"Pending", website:"", partner:"", comments:"" };
 
 export default function App() {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [data, setData] = useState(SEED);
+  const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkaG1nc2Vsbnhkc3FjeGNpdXBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA5MjM4NjksImV4cCI6MjA1NjQ5OTg2OX0.bYMzSSZMRi0cDSBpRSxGEaAJCXbdp_i6Q9CgDRRzBek';
+  const BASE = 'https://hdhmgselnxdsqcxciupp.supabase.co/rest/v1/stakeholders';
   useEffect(() => {
-    apiGet()
-      .then(rows => { setData(rows); setLoading(false); })
-      .catch(e => { console.error(e); setLoading(false); });
+    fetch(BASE + '?select=*&order=id.asc', { headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } })
+      .then(r => r.json())
+      .then(rows => { if (Array.isArray(rows) && rows.length > 0) setData(rows); })
+      .catch(() => {});
   }, []);
   const [view, setView] = useState("table"); // table | form | stats
   const [editing, setEditing] = useState(null);
@@ -73,7 +92,7 @@ export default function App() {
   const [sortDir, setSortDir] = useState("asc");
   const [selected, setSelected] = useState(null);
   const [toast, setToast] = useState(null);
-  const [nextId, setNextId] = useState(1);
+  const [nextId, setNextId] = useState(SEED.length + 1);
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
@@ -238,6 +257,8 @@ export default function App() {
       { label:"Total Stakeholders", val:stats.total,                           icon:"👥", color:"#0a3d62", accent:"#0a3d62", sub:"across all countries" },
       { label:"Manage Closely",     val:stats.byCategory["Manage closely"]||0, icon:"🎯", color:"#dc2626", accent:"#dc2626", sub:"high influence & impact" },
       { label:"Countries",          val:Object.keys(stats.byCountry).length,   icon:"🌍", color:"#0e7490", accent:"#0e7490", sub:"Black Sea region" },
+      { label:"Active",             val:stats.byStatus["Active"]||0,           icon:"✅",     color:"#065f46", accent:"#059669", sub:"engaged stakeholders" },
+      { label:"GDPR Pending",       val:gdprPending,                           icon:"⚠️",color:"#92400e",accent:"#f59e0b", sub:"awaiting consent" },
     ];
     const BarRow = ({ label, val, total, color }) => {
       const pct = total > 0 ? Math.round(val / total * 100) : 0;
@@ -297,13 +318,6 @@ export default function App() {
                 <span>← Low Influence</span><span>High Influence →</span>
               </div>
             </div>
-          </div>
-
-          <div style={S.card}>
-            <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>📊 By Status</div>
-            {Object.entries(stats.byStatus).map(([s,n]) => (
-              <BarRow key={s} label={s} val={n} total={stats.total} color={(STATUS_COLOR[s]||STATUS_COLOR["Inactive"]).text} />
-            ))}
           </div>
 
         </div>
@@ -424,6 +438,7 @@ export default function App() {
           {[
             { label:"Contact Information", key:"contact", placeholder:"email, phone…" },
             { label:"Website", key:"website", placeholder:"https://…" },
+            { label:"GDPR Consent", key:"gdpr", type:"select", opts:["YES","NO","PENDING"] },
             { label:"Status", key:"status", type:"select", opts:["Active","Potential","Pending","Inactive"] },
             { label:"Comments / Justification", key:"comments", span:2 },
           ].map(f => (
@@ -455,7 +470,7 @@ export default function App() {
     const cat = getCategory(row.influence, row.impact);
     const cc = CATEGORY_COLOR[cat];
     const sc = STATUS_COLOR[row.status] || STATUS_COLOR["Inactive"];
-
+    const gc = GDPR_COLOR[row.gdpr] || GDPR_COLOR["PENDING"];
     return (
       <div style={S.detailPanel}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
@@ -468,6 +483,7 @@ export default function App() {
         <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:16 }}>
           <span style={S.pill(cc.bg, cc.text)}>● {cat}</span>
           <span style={S.pill(sc.bg, sc.text)}>{row.status}</span>
+          <span style={S.pill(gc.bg, gc.text)}>GDPR: {row.gdpr}</span>
         </div>
 
         {[
@@ -590,6 +606,7 @@ export default function App() {
                 { label:"Category", field:"_cat", w:130 },
                 { label:"Partner", field:"partner", w:80 },
                 { label:"Status", field:"status", w:80 },
+                { label:"GDPR", field:"gdpr", w:70 },
               ].map(col => (
                 <th key={col.field} style={{ ...S.th, width:col.w, minWidth:col.w }} onClick={() => col.field !== "_cat" && sortBy(col.field)}>
                   {col.label}{col.field !== "_cat" && <SortIcon field={col.field} />}
@@ -605,7 +622,7 @@ export default function App() {
               const cat = getCategory(row.influence, row.impact);
               const cc = CATEGORY_COLOR[cat];
               const sc = STATUS_COLOR[row.status] || STATUS_COLOR["Inactive"];
-          
+              const gc = GDPR_COLOR[row.gdpr] || GDPR_COLOR["PENDING"];
               const isSelected = selected?.id === row.id;
               return (
                 <tr key={row.id} style={S.tr(isSelected)} onClick={() => setSelected(isSelected ? null : row)} onMouseEnter={e=>e.currentTarget.style.background="#f8fafc"} onMouseLeave={e=>e.currentTarget.style.background=isSelected?"#eff6ff":"transparent"}>
@@ -620,6 +637,7 @@ export default function App() {
                   <td style={S.td(isSelected)}><span style={{ ...S.pill(cc.bg, cc.text), fontSize:10 }}>● {cat}</span></td>
                   <td style={S.td(isSelected)}><span style={{ fontSize:11 }}>{row.partner}</span></td>
                   <td style={S.td(isSelected)}><span style={{ ...S.pill(sc.bg, sc.text), fontSize:10 }}>{row.status}</span></td>
+                  <td style={S.td(isSelected)}><span style={{ ...S.pill(gc.bg, gc.text), fontSize:10 }}>{row.gdpr}</span></td>
                 </tr>
               );
             })}
@@ -636,7 +654,7 @@ export default function App() {
     <div style={S.app}>
       <header style={S.header}>
         <div style={S.logo}>
-          <img src="/anemoneplus-db/logo.png" alt="ANEMONE PLUS" style={{height:50, width:"auto"}} />
+          <img src="/logo.png" alt="ANEMONE PLUS" style={{height:50, width:"auto"}} />
           <div>
             <div style={S.logoText}>ANEMONE PLUS</div>
             <div style={S.logoSub}>BSB00949 · Stakeholder Database · Output 1.1</div>
