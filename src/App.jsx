@@ -1,12 +1,11 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 const API_URL = "https://script.google.com/macros/s/AKfycbwR2zrhnt3KQVlWvMit34ffcIUKJveUW2qty6jXkXc3k3rn9bC8oBPaht_lBR_hMh5qMA/exec";
 
 async function apiGet() {
   const res = await fetch(API_URL);
   if (!res.ok) throw new Error("Load failed: "+res.status);
-  const json = await res.json();
-  return json.data || [];
+  return (await res.json()).data || [];
 }
 
 async function apiPost(body) {
@@ -14,6 +13,9 @@ async function apiPost(body) {
   if (!res.ok) throw new Error("Save failed: "+res.status);
   return res.json();
 }
+
+
+// ── Seed data from UkrSCES template ────────────────────────────────────────
 
 function getCategory(influence, impact) {
   if (influence >= 7 && impact >= 7) return "Manage closely";
@@ -53,7 +55,11 @@ export default function App() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [loadError, setLoadError] = useState(null);
+  useEffect(() => {
+    apiGet()
+      .then(rows => { setData(rows); setLoading(false); })
+      .catch(e => { console.error(e); setLoading(false); });
+  }, []);
   const [view, setView] = useState("table"); // table | form | stats
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
@@ -72,13 +78,6 @@ export default function App() {
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
-  useEffect(() => {
-    apiGet()
-      .then(rows => { setData(rows); setLoading(false); })
-      .catch(e => { setLoadError(e.message); setLoading(false); });
-  }, []);
-
-
   };
 
   const filtered = useMemo(() => {
@@ -151,6 +150,7 @@ export default function App() {
   }
 
   async function deleteRow(id) {
+    if (!confirm("Delete this stakeholder?")) return;
     setSaving(true);
     try {
       const result = await apiPost({ action:"delete", id });
@@ -161,7 +161,7 @@ export default function App() {
     finally { setSaving(false); }
   }
 
-  function sortBy(field) {
+    function sortBy(field) {
     if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
     else { setSortField(field); setSortDir("asc"); }
   }
@@ -174,7 +174,7 @@ export default function App() {
     }).join(","))];
     const blob = new Blob([rows.join("\n")], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "ANEMONE_PLUS_Stakeholder_Database.csv"; a.click();
+    const a = document.createElement("a"); a.href = url; a.download = "ANEMONE_PLUS_Stakeholder_Database.csv"; document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
     showToast("CSV exported ✓");
   }
 
@@ -228,86 +228,125 @@ export default function App() {
   };
 
   // ── STATS VIEW ────────────────────────────────────────────────────────────
-  const StatsView = () => (
-    <div>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginBottom:20 }}>
-        {[
-          { label:"Total Stakeholders", val:stats.total, color:"#0a3d62" },
-          { label:"Manage Closely", val:stats.byCategory["Manage closely"]||0, color:"#ef4444" },
-          { label:"Countries", val:Object.keys(stats.byCountry).length, color:"#0e7490" },
-          { label:"Active", val:stats.byStatus["Active"]||0, color:"#065f46" },
-        ].map(s => (
-          <div key={s.label} style={S.statCard}>
-            <div style={{ ...S.statNum, color:s.color }}>{s.val}</div>
-            <div style={S.statLabel}>{s.label}</div>
+  const StatsView = () => {
+    const gdprYes     = data.filter(r => r.gdpr === "YES").length;
+    const gdprPending = data.filter(r => r.gdpr === "PENDING").length;
+    const gdprNo      = data.filter(r => r.gdpr === "NO").length;
+    const byPartner   = {};
+    data.forEach(r => { if (r.partner) byPartner[r.partner] = (byPartner[r.partner] || 0) + 1; });
+    const kpis = [
+      { label:"Total Stakeholders", val:stats.total,                           icon:"👥", color:"#0a3d62", accent:"#0a3d62", sub:"across all countries" },
+      { label:"Manage Closely",     val:stats.byCategory["Manage closely"]||0, icon:"🎯", color:"#dc2626", accent:"#dc2626", sub:"high influence & impact" },
+      { label:"Countries",          val:Object.keys(stats.byCountry).length,   icon:"🌍", color:"#0e7490", accent:"#0e7490", sub:"Black Sea region" },
+      { label:"Active",             val:stats.byStatus["Active"]||0,           icon:"✅",     color:"#065f46", accent:"#059669", sub:"engaged stakeholders" },
+      { label:"GDPR Pending",       val:gdprPending,                           icon:"⚠️",color:"#92400e",accent:"#f59e0b", sub:"awaiting consent" },
+    ];
+    const BarRow = ({ label, val, total, color }) => {
+      const pct = total > 0 ? Math.round(val / total * 100) : 0;
+      return (
+        <div style={{ marginBottom:12 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
+            <span style={{ fontSize:12, fontWeight:600, color:"#334155", flex:1, paddingRight:8 }}>{label}</span>
+            <span style={{ fontSize:12, color:"#64748b", fontWeight:700, whiteSpace:"nowrap" }}>
+              {val} <span style={{ fontWeight:400 }}>({pct}%)</span>
+            </span>
           </div>
-        ))}
-      </div>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
-        <div style={S.card}>
-          <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>By Engagement Category</div>
-          {Object.entries(stats.byCategory).map(([cat,n]) => {
-            const c = CATEGORY_COLOR[cat];
-            return (
-              <div key={cat} style={{ marginBottom:10 }}>
-                <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:4 }}>
-                  <span style={{ fontWeight:600 }}>{cat}</span>
-                  <span style={{ color:"#64748b" }}>{n} ({Math.round(n/stats.total*100)}%)</span>
-                </div>
-                <div style={{ background:"#f1f5f9", borderRadius:999, overflow:"hidden", height:7 }}>
-                  <div style={S.progressBar(n/stats.total*100, c.dot)} />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <div style={S.card}>
-          <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>By Country</div>
-          {Object.entries(stats.byCountry).sort((a,b)=>b[1]-a[1]).map(([c,n]) => (
-            <div key={c} style={{ marginBottom:10 }}>
-              <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:4 }}>
-                <span style={{ fontWeight:600 }}>{c}</span>
-                <span style={{ color:"#64748b" }}>{n} ({Math.round(n/stats.total*100)}%)</span>
-              </div>
-              <div style={{ background:"#f1f5f9", borderRadius:999, overflow:"hidden", height:7 }}>
-                <div style={S.progressBar(n/stats.total*100, "#0a3d62")} />
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={S.card}>
-          <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>By Stakeholder Type</div>
-          {Object.entries(stats.byAudience).sort((a,b)=>b[1]-a[1]).map(([a,n]) => (
-            <div key={a} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", borderBottom:"1px solid #f1f5f9", fontSize:12 }}>
-              <span style={{ color:"#334155" }}>{a}</span>
-              <span style={{ fontWeight:700, color:"#0a3d62", minWidth:24, textAlign:"right" }}>{n}</span>
-            </div>
-          ))}
-        </div>
-        <div style={S.card}>
-          <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>By Status</div>
-          {Object.entries(stats.byStatus).map(([s,n]) => {
-            const c = STATUS_COLOR[s] || STATUS_COLOR["Inactive"];
-            return (
-              <div key={s} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-                <span style={{ ...S.pill(c.bg, c.text) }}>{s}</span>
-                <div style={{ flex:1, margin:"0 12px", background:"#f1f5f9", borderRadius:999, overflow:"hidden", height:7 }}>
-                  <div style={S.progressBar(n/stats.total*100, c.text)} />
-                </div>
-                <span style={{ fontSize:12, fontWeight:700, color:"#334155" }}>{n}</span>
-              </div>
-            );
-          })}
-          <div style={{ marginTop:16, padding:"12px 14px", background:"#fffbeb", borderRadius:8, border:"1px solid #fde68a" }}>
-            <div style={{ fontSize:11, fontWeight:700, color:"#92400e", marginBottom:4 }}>⚠ GDPR Pending</div>
-            <div style={{ fontSize:13, color:"#78350f" }}>{data.filter(r=>r.gdpr==="PENDING").length} stakeholders awaiting GDPR consent confirmation</div>
+          <div style={{ background:"#f1f5f9", borderRadius:999, overflow:"hidden", height:10 }}>
+            <div style={{ height:10, borderRadius:999, background:color, width:pct+"%", transition:"width 0.6s ease", minWidth: pct > 0 ? 4 : 0 }} />
           </div>
         </div>
-      </div>
-    </div>
-  );
+      );
+    };
+    const matrixOrder = ["Keep satisfied","Manage closely","Keep informed","Consult with"];
+    return (
+      <div>
 
-  // ── FORM VIEW ─────────────────────────────────────────────────────────────
+        {/* KPI row */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:14, marginBottom:20 }}>
+          {kpis.map(k => (
+            <div key={k.label} style={{ background:"#fff", borderRadius:12, padding:"16px 18px", boxShadow:"0 1px 6px rgba(0,0,0,0.07)", borderLeft:"4px solid "+k.accent }}>
+              <div style={{ fontSize:24, marginBottom:6 }}>{k.icon}</div>
+              <div style={{ fontSize:32, fontWeight:800, color:k.color, lineHeight:1 }}>{k.val}</div>
+              <div style={{ fontSize:12, fontWeight:700, color:"#1a2332", marginTop:4 }}>{k.label}</div>
+              <div style={{ fontSize:11, color:"#94a3b8", marginTop:2 }}>{k.sub}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Category + Status */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
+
+          <div style={S.card}>
+            <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>🎯 By Engagement Category</div>
+            {Object.entries(stats.byCategory).map(([cat,n]) => (
+              <BarRow key={cat} label={cat} val={n} total={stats.total} color={CATEGORY_COLOR[cat].dot} />
+            ))}
+            <div style={{ marginTop:16, padding:"12px 14px", background:"#f8fafc", borderRadius:8, border:"1px solid #e2e8f0" }}>
+              <div style={{ fontSize:11, fontWeight:700, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:10 }}>Power / Interest Matrix</div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
+                {matrixOrder.map(cat => {
+                  const n = stats.byCategory[cat] || 0;
+                  const c = CATEGORY_COLOR[cat];
+                  return (
+                    <div key={cat} style={{ background:c.bg, borderRadius:8, padding:"10px 12px", border:"1px solid "+c.dot+"40" }}>
+                      <div style={{ fontSize:22, fontWeight:800, color:c.text, lineHeight:1 }}>{n}</div>
+                      <div style={{ fontSize:10, fontWeight:700, color:c.text, marginTop:3, opacity:0.85 }}>{cat}</div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display:"flex", justifyContent:"space-between", marginTop:8, fontSize:10, color:"#94a3b8", borderTop:"1px solid #e2e8f0", paddingTop:6 }}>
+                <span>← Low Influence</span><span>High Influence →</span>
+              </div>
+            </div>
+          </div>
+
+          <div style={S.card}>
+            <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>📊 By Status</div>
+            {Object.entries(stats.byStatus).map(([s,n]) => (
+              <BarRow key={s} label={s} val={n} total={stats.total} color={(STATUS_COLOR[s]||STATUS_COLOR["Inactive"]).text} />
+            ))}
+            <div style={{ marginTop:16, borderTop:"1px solid #f1f5f9", paddingTop:14 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:10 }}>GDPR Consent</div>
+              {[
+                { label:"Confirmed", val:gdprYes,    color:"#22c55e" },
+                { label:"Pending",   val:gdprPending, color:"#f59e0b" },
+                { label:"Not Given", val:gdprNo,      color:"#ef4444" },
+              ].map(g => <BarRow key={g.label} label={g.label} val={g.val} total={stats.total} color={g.color} />)}
+            </div>
+          </div>
+
+        </div>
+
+        {/* Country + Partner */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
+          <div style={S.card}>
+            <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>🌍 By Country</div>
+            {Object.entries(stats.byCountry).sort((a,b)=>b[1]-a[1]).map(([c,n]) => (
+              <BarRow key={c} label={c} val={n} total={stats.total} color="#0a3d62" />
+            ))}
+          </div>
+          <div style={S.card}>
+            <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>🤝 By Partner Organisation</div>
+            {Object.entries(byPartner).sort((a,b)=>b[1]-a[1]).map(([p,n]) => (
+              <BarRow key={p} label={p} val={n} total={stats.total} color="#0e7490" />
+            ))}
+          </div>
+        </div>
+
+        {/* Stakeholder Type full width */}
+        <div style={S.card}>
+          <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>🏛️ By Stakeholder Type</div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 32px" }}>
+            {Object.entries(stats.byAudience).sort((a,b)=>b[1]-a[1]).map(([a,n]) => (
+              <BarRow key={a} label={a} val={n} total={stats.total} color="#7c3aed" />
+            ))}
+          </div>
+        </div>
+
+      </div>
+    );
+  };
   const FormView = () => (
     <div style={{ maxWidth:900, margin:"0 auto" }}>
       <div style={S.card}>
@@ -338,7 +377,7 @@ export default function App() {
               {f.type === "select" ? (
                 <select style={S.input} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}>
                   <option value="">Select…</option>
-                  {f.opts.map(o => <option key={o}>{o}</option>)}
+                  {f.opts.map(o => <option key={o} value={o}>{o === "Turkey" ? "Türkiye" : o}</option>)}
                 </select>
               ) : (
                 <input style={S.input} value={form[f.key]} placeholder={f.placeholder} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
@@ -522,7 +561,7 @@ export default function App() {
           <input style={S.search} placeholder="Search name, city, contact, area of interest…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <select style={S.select} value={filterCountry} onChange={e=>setFilterCountry(e.target.value)}>
-          {COUNTRIES.map(c=><option key={c}>{c}</option>)}
+          {COUNTRIES.map(c=><option key={c} value={c}>{c === "Turkey" ? "Türkiye" : c}</option>)}
         </select>
         <select style={S.select} value={filterPartner} onChange={e=>setFilterPartner(e.target.value)}>
           {PARTNERS.map(p=><option key={p}>{p}</option>)}
@@ -543,7 +582,6 @@ export default function App() {
           Showing <strong style={{ color:"#0a3d62" }}>{filtered.length}</strong> of <strong style={{ color:"#0a3d62" }}>{data.length}</strong> stakeholders
         </span>
         <div style={{ display:"flex", gap:6 }}>
-          <button style={S.btn("ghost")} onClick={exportCSV}>📥 Export CSV</button>
           <button style={S.btn("primary")} onClick={openNew}>➕ Add Stakeholder</button>
         </div>
       </div>
@@ -631,7 +669,7 @@ export default function App() {
         </div>
         <div style={S.headerRight}>
           <span style={S.pill("#1a3a5c","rgba(255,255,255,0.7)")}>{data.length} stakeholders</span>
-          <button style={{ ...S.btn("teal"), fontSize:12 }} onClick={exportCSV}>📥 CSV</button>
+<button style={{...S.btn("teal"),fontSize:12}} onClick={exportCSV}>📥 CSV</button>
         </div>
       </header>
 
