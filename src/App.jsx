@@ -238,8 +238,6 @@ export default function App() {
       { label:"Total Stakeholders", val:stats.total,                           icon:"👥", color:"#0a3d62", accent:"#0a3d62", sub:"across all countries" },
       { label:"Manage Closely",     val:stats.byCategory["Manage closely"]||0, icon:"🎯", color:"#dc2626", accent:"#dc2626", sub:"high influence & impact" },
       { label:"Countries",          val:Object.keys(stats.byCountry).length,   icon:"🌍", color:"#0e7490", accent:"#0e7490", sub:"Black Sea region" },
-      { label:"Active",             val:stats.byStatus["Active"]||0,           icon:"✅",     color:"#065f46", accent:"#059669", sub:"engaged stakeholders" },
-      { label:"GDPR Pending",       val:gdprPending,                           icon:"⚠️",color:"#92400e",accent:"#f59e0b", sub:"awaiting consent" },
     ];
     const BarRow = ({ label, val, total, color }) => {
       const pct = total > 0 ? Math.round(val / total * 100) : 0;
@@ -306,14 +304,6 @@ export default function App() {
             {Object.entries(stats.byStatus).map(([s,n]) => (
               <BarRow key={s} label={s} val={n} total={stats.total} color={(STATUS_COLOR[s]||STATUS_COLOR["Inactive"]).text} />
             ))}
-            <div style={{ marginTop:16, borderTop:"1px solid #f1f5f9", paddingTop:14 }}>
-              <div style={{ fontSize:11, fontWeight:700, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:10 }}>GDPR Consent</div>
-              {[
-                { label:"Confirmed", val:gdprYes,    color:"#22c55e" },
-                { label:"Pending",   val:gdprPending, color:"#f59e0b" },
-                { label:"Not Given", val:gdprNo,      color:"#ef4444" },
-              ].map(g => <BarRow key={g.label} label={g.label} val={g.val} total={stats.total} color={g.color} />)}
-            </div>
           </div>
 
         </div>
@@ -434,7 +424,6 @@ export default function App() {
           {[
             { label:"Contact Information", key:"contact", placeholder:"email, phone…" },
             { label:"Website", key:"website", placeholder:"https://…" },
-            { label:"GDPR Consent", key:"gdpr", type:"select", opts:["YES","NO","PENDING"] },
             { label:"Status", key:"status", type:"select", opts:["Active","Potential","Pending","Inactive"] },
             { label:"Comments / Justification", key:"comments", span:2 },
           ].map(f => (
@@ -466,7 +455,7 @@ export default function App() {
     const cat = getCategory(row.influence, row.impact);
     const cc = CATEGORY_COLOR[cat];
     const sc = STATUS_COLOR[row.status] || STATUS_COLOR["Inactive"];
-    const gc = GDPR_COLOR[row.gdpr] || GDPR_COLOR["PENDING"];
+
     return (
       <div style={S.detailPanel}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
@@ -479,7 +468,6 @@ export default function App() {
         <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:16 }}>
           <span style={S.pill(cc.bg, cc.text)}>● {cat}</span>
           <span style={S.pill(sc.bg, sc.text)}>{row.status}</span>
-          <span style={S.pill(gc.bg, gc.text)}>GDPR: {row.gdpr}</span>
         </div>
 
         {[
@@ -602,7 +590,6 @@ export default function App() {
                 { label:"Category", field:"_cat", w:130 },
                 { label:"Partner", field:"partner", w:80 },
                 { label:"Status", field:"status", w:80 },
-                { label:"GDPR", field:"gdpr", w:70 },
               ].map(col => (
                 <th key={col.field} style={{ ...S.th, width:col.w, minWidth:col.w }} onClick={() => col.field !== "_cat" && sortBy(col.field)}>
                   {col.label}{col.field !== "_cat" && <SortIcon field={col.field} />}
@@ -618,7 +605,7 @@ export default function App() {
               const cat = getCategory(row.influence, row.impact);
               const cc = CATEGORY_COLOR[cat];
               const sc = STATUS_COLOR[row.status] || STATUS_COLOR["Inactive"];
-              const gc = GDPR_COLOR[row.gdpr] || GDPR_COLOR["PENDING"];
+          
               const isSelected = selected?.id === row.id;
               return (
                 <tr key={row.id} style={S.tr(isSelected)} onClick={() => setSelected(isSelected ? null : row)} onMouseEnter={e=>e.currentTarget.style.background="#f8fafc"} onMouseLeave={e=>e.currentTarget.style.background=isSelected?"#eff6ff":"transparent"}>
