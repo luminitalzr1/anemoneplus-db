@@ -2,8 +2,6 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 
 const API_URL = "https://script.google.com/macros/s/AKfycbwR2zrhnt3KQVlWvMit34ffcIUKJveUW2qty6jXkXc3k3rn9bC8oBPaht_lBR_hMh5qMA/exec";
 
-const WRITE_PIN = "2025";
-
 async function apiGet() {
   const res = await fetch(API_URL);
   if (!res.ok) throw new Error("Load failed: "+res.status);
@@ -66,11 +64,6 @@ export default function App() {
   const [sortDir, setSortDir] = useState("asc");
   const [selected, setSelected] = useState(null);
   const [toast, setToast] = useState(null);
-  const [pinUnlocked,setPinUnlocked]=useState(false);
-  const [pinInput,setPinInput]=useState("");
-  const [pinError,setPinError]=useState(false);
-  const [showPinModal,setShowPinModal]=useState(false);
-  const [pendingAction,setPendingAction]=useState(null);
   const [nextId, setNextId] = useState(SEED.length + 1);
 
   const showToast = (msg, type = "success") => {
@@ -114,37 +107,48 @@ export default function App() {
     return { total, byCountry, byAudience, byCategory, byStatus };
   }, [data]);
 
-  function requirePin(action){if(pinUnlocked){action();return;}setPendingAction(()=>action);setShowPinModal(true);setPinInput("");setPinError(false);}
-  function submitPin(){if(pinInput===WRITE_PIN){setPinUnlocked(true);setShowPinModal(false);if(pendingAction){pendingAction();setPendingAction(null);}}else{setPinError(true);setPinInput("");}}
   function openNew() {
-    requirePin(()=>{setEditing(null);setForm({ ...EMPTY });
-    setView("form");});}
-
-  function openEdit(row){requirePin(()=>{setEditing(row.id);setForm({...row});setView("form");setSelected(null);});}
-
-  function saveForm() {
-    if (!form.name || !form.country) { showToast("Name and Country are required", "error"); return; }
-    const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkaG1nc2Vsbnhkc3FjeGNpdXBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA5MjM4NjksImV4cCI6MjA1NjQ5OTg2OX0.bYMzSSZMRi0cDSBpRSxGEaAJCXbdp_i6Q9CgDRRzBek';
-    const BASE = 'https://hdhmgselnxdsqcxciupp.supabase.co/rest/v1/stakeholders';
-    const h = { 'Content-Type': 'application/json', apikey: KEY, Authorization: 'Bearer ' + KEY };
-    if (editing) {
-      const { id, ...rest } = form;
-      fetch(BASE + '?id=eq.' + editing, { method: 'PATCH', headers: { ...h, Prefer: 'return=minimal' }, body: JSON.stringify(rest) })
-        .then(() => { setData(d => d.map(r => r.id === editing ? { ...form, id: editing } : r)); showToast("Stakeholder updated ✓"); setView("table"); })
-        .catch(() => showToast("Save failed", "error"));
-    } else {
-      const { id, ...rest } = form;
-      fetch(BASE, { method: 'POST', headers: { ...h, Prefer: 'return=representation' }, body: JSON.stringify(rest) })
-        .then(r => r.json())
-        .then(rows => { setData(d => [...d, rows[0] || { ...form, id: nextId }]); setNextId(n => n+1); showToast("Stakeholder added ✓"); setView("table"); })
-        .catch(() => showToast("Save failed", "error"));
-    }
+    setEditing(null);
+    setForm({ ...EMPTY });
+    setView("form");
   }
 
-  function deleteRow(id) {
-    setData(d => d.filter(r => r.id !== id));
+  function openEdit(row) {
+    setEditing(row.id);
+    setForm({ ...row });
+    setView("form");
     setSelected(null);
-    showToast("Stakeholder removed");
+  }
+
+  async function saveForm() {
+    if (!form.name || !form.country) { showToast("Name and Country are required", "error"); return; }
+    setSaving(true);
+    try {
+      if (editing) {
+        const result = await apiPost({ action:"update", record:{ ...form, id:editing } });
+        if (!result.success) throw new Error(result.error||"Update failed");
+        setData(d => d.map(r => r.id===editing ? { ...form, id:editing } : r));
+        showToast("Stakeholder updated ✓");
+      } else {
+        const result = await apiPost({ action:"add", record:form });
+        if (!result.success) throw new Error(result.error||"Add failed");
+        setData(d => [...d, { ...form, id:result.id }]);
+        showToast("Stakeholder added ✓");
+      }
+      setView("table");
+    } catch(e) { showToast("Error: "+e.message, "error"); }
+    finally { setSaving(false); }
+  }
+
+  async function deleteRow(id) {
+    setSaving(true);
+    try {
+      const result = await apiPost({ action:"delete", id });
+      if (!result.success) throw new Error(result.error||"Delete failed");
+      setData(d => d.filter(r => r.id!==id));
+      setSelected(null); showToast("Stakeholder removed");
+    } catch(e) { showToast("Error: "+e.message, "error"); }
+    finally { setSaving(false); }
   }
 
   function sortBy(field) {
@@ -214,23 +218,6 @@ export default function App() {
   };
 
   // ── STATS VIEW ────────────────────────────────────────────────────────────
-  const PinModal=()=>(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>setShowPinModal(false)}>
-      <div style={{background:"#fff",borderRadius:16,padding:32,width:320,textAlign:"center"}} onClick={e=>e.stopPropagation()}>
-        <div style={{fontSize:32,marginBottom:8}}>🔒</div>
-        <div style={{fontWeight:800,fontSize:16,color:"#0a3d62",marginBottom:4}}>Enter PIN to edit</div>
-        <div style={{fontSize:12,color:"#64748b",marginBottom:20}}>Contact the project coordinator for the PIN</div>
-        <input type="password" maxLength={4} value={pinInput} onChange={e=>{setPinInput(e.target.value);setPinError(false);}} onKeyDown={e=>e.key==="Enter"&&submitPin()} placeholder="••••" autoFocus
-          style={{width:"100%",padding:"9px 12px",borderRadius:8,border:pinError?"1.5px solid #ef4444":"1.5px solid #cbd5e1",fontSize:24,textAlign:"center",letterSpacing:8,outline:"none",boxSizing:"border-box",marginBottom:8}}/>
-        {pinError&&<div style={{fontSize:12,color:"#ef4444",marginBottom:8}}>Incorrect PIN</div>}
-        <div style={{display:"flex",gap:8,marginTop:8}}>
-          <button style={{flex:1,padding:"8px 16px",borderRadius:8,border:"1.5px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",fontSize:13,fontWeight:600}} onClick={()=>setShowPinModal(false)}>Cancel</button>
-          <button style={{flex:1,padding:"8px 16px",borderRadius:8,border:"none",background:"#0a3d62",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:600}} onClick={submitPin}>Unlock</button>
-        </div>
-      </div>
-    </div>
-  );
-
   const StatsView = () => (
     <div>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginBottom:20 }}>
@@ -613,7 +600,6 @@ export default function App() {
   // ── RENDER ────────────────────────────────────────────────────────────────
   return (
     <div style={S.app}>
-      {showPinModal&&<PinModal/>}
       <header style={S.header}>
         <div style={S.logo}>
           <img src="/logo.png" alt="ANEMONE PLUS" style={{height:50, width:"auto"}} />
@@ -653,5 +639,3 @@ export default function App() {
     </div>
   );
 }
-// TEST_MARKER_12345
- 
