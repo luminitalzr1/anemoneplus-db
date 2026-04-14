@@ -620,7 +620,6 @@ export default function App() {
                   <td style={S.td(isSelected)}><span style={{ ...S.pill(cc.bg, cc.text), fontSize:10 }}>● {cat}</span></td>
                   <td style={S.td(isSelected)}><span style={{ fontSize:11 }}>{row.partner}</span></td>
                   <td style={S.td(isSelected)}><span style={{ ...S.pill(sc.bg, sc.text), fontSize:10 }}>{row.status}</span></td>
-                  <td style={S.td(isSelected)}><span style={{ ...S.pill(gc.bg, gc.text), fontSize:10 }}>{row.gdpr}</span></td>
                 </tr>
               );
             })}
