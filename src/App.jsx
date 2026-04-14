@@ -51,6 +51,9 @@ const EMPTY = { country:"", name:"", city:"", lat:"", lng:"", address:"", audien
 
 export default function App() {
   const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState(null);
   const [view, setView] = useState("table"); // table | form | stats
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
@@ -69,6 +72,13 @@ export default function App() {
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
+  useEffect(() => {
+    apiGet()
+      .then(rows => { setData(rows); setLoading(false); })
+      .catch(e => { setLoadError(e.message); setLoading(false); });
+  }, []);
+
+
   };
 
   const filtered = useMemo(() => {
