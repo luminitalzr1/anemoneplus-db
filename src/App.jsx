@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 
 const API_URL = "https://script.google.com/macros/s/AKfycbwR2zrhnt3KQVlWvMit34ffcIUKJveUW2qty6jXkXc3k3rn9bC8oBPaht_lBR_hMh5qMA/exec";
 
@@ -754,7 +754,6 @@ export default function App() {
             { id:"table", label:"📋 Database" },
             { id:"stats",  label:"📊 Statistics" },
             { id:"map",    label:"🗺️ Map" },
-            { id:"map",    label:"🗺️ Map" },
             { id:"form",   label:"➕ Add New" },
           ].map(b => (
             <button key={b.id} style={S.navBtn(view === b.id)} onClick={() => { if(b.id==="form") openNew(); else setView(b.id); }}>
@@ -771,7 +770,6 @@ export default function App() {
       <main style={S.body}>
         {view === "table" && <TableView />}
         {view === "stats" && <StatsView />}
-        {view === "map"   && <MapView />}
         {view === "map"   && <MapView />}
         {view === "form"  && FormView()}
       </main>
