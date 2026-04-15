@@ -106,14 +106,18 @@ export default function App() {
     const byAudience = {};
     const byCategory = {};
     const byStatus = {};
+    const byAOI = {};
     data.forEach(r => {
+      byAOI[r.aoi] = (byAOI[r.aoi] || 0) + 1;
       byCountry[r.country] = (byCountry[r.country] || 0) + 1;
       byAudience[r.audience] = (byAudience[r.audience] || 0) + 1;
       const cat = getCategory(r.influence, r.impact);
       byCategory[cat] = (byCategory[cat] || 0) + 1;
       byStatus[r.status] = (byStatus[r.status] || 0) + 1;
     });
-    return { total, byCountry, byAudience, byCategory, byStatus };
+    const topAudience = Object.entries(byAudience).sort((a,b)=>b[1]-a[1])[0]?.[0] || "";
+    const topAOI = Object.entries(byAOI||{}).sort((a,b)=>b[1]-a[1])[0]?.[0] || "";
+    return { total, byCountry, byAudience, byCategory, byStatus, topAudience, topAOI };
   }, [data]);
 
   function openNew() {
@@ -238,6 +242,8 @@ export default function App() {
       { label:"Total Stakeholders", val:stats.total,                           icon:"👥", color:"#0a3d62", accent:"#0a3d62", sub:"across all countries" },
       { label:"Manage Closely",     val:stats.byCategory["Manage closely"]||0, icon:"🎯", color:"#dc2626", accent:"#dc2626", sub:"high influence & impact" },
       { label:"Countries",          val:Object.keys(stats.byCountry).length,   icon:"🌍", color:"#0e7490", accent:"#0e7490", sub:"Black Sea region" },
+      { label:"Top Audience",        val:stats.topAudience,                     icon:"🏛️", color:"#7c3aed", accent:"#7c3aed", sub:"most represented" },
+      { label:"Top Area of Interest",val:stats.topAOI,                          icon:"🌊", color:"#0891b2", accent:"#0891b2", sub:"most common focus" },
     ];
     const BarRow = ({ label, val, total, color }) => {
       const pct = total > 0 ? Math.round(val / total * 100) : 0;
