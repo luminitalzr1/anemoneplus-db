@@ -788,7 +788,7 @@ export default function App() {
         {view === "table" && <TableView />}
         {view === "stats" && <StatsView />}
         {view === "map"   && <MapView />}
-        {view === "form"  && <FormView />}
+        {view === "form"  && <FormView key="stable-form" />}
       </main>
 
       {toast && (
