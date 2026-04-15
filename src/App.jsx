@@ -238,8 +238,6 @@ export default function App() {
       { label:"Total Stakeholders", val:stats.total,                           icon:"👥", color:"#0a3d62", accent:"#0a3d62", sub:"across all countries" },
       { label:"Manage Closely",     val:stats.byCategory["Manage closely"]||0, icon:"🎯", color:"#dc2626", accent:"#dc2626", sub:"high influence & impact" },
       { label:"Countries",          val:Object.keys(stats.byCountry).length,   icon:"🌍", color:"#0e7490", accent:"#0e7490", sub:"Black Sea region" },
-      { label:"Active",             val:stats.byStatus["Active"]||0,           icon:"✅",     color:"#065f46", accent:"#059669", sub:"engaged stakeholders" },
-      { label:"GDPR Pending",       val:gdprPending,                           icon:"⚠️",color:"#92400e",accent:"#f59e0b", sub:"awaiting consent" },
     ];
     const BarRow = ({ label, val, total, color }) => {
       const pct = total > 0 ? Math.round(val / total * 100) : 0;
