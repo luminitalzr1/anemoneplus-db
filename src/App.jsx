@@ -721,13 +721,13 @@ export default function App() {
             {filtered.length === 0 && (
               <tr><td colSpan={12} style={{ textAlign:"center", padding:40, color:"#94a3b8", fontSize:14 }}>No stakeholders match the current filters</td></tr>
             )}
-            {filtered.map(row => {
+            {filtered.map((row, idx) => {
               const cat = getCategory(row.influence, row.impact);
               const cc = CATEGORY_COLOR[cat];
               const isSelected = selected?.id === row.id;
               return (
                 <tr key={row.id} style={S.tr(isSelected)} onClick={() => setSelected(isSelected ? null : row)} onMouseEnter={e=>e.currentTarget.style.background="#f8fafc"} onMouseLeave={e=>e.currentTarget.style.background=isSelected?"#eff6ff":"transparent"}>
-                  <td style={S.td(isSelected)}><span style={{ fontSize:11, color:"#94a3b8", fontWeight:600 }}>{row.id}</span></td>
+                  <td style={S.td(isSelected)}><span style={{ fontSize:11, color:"#94a3b8", fontWeight:600 }}>{idx+1}</span></td>
                   <td style={S.td(isSelected)}><span style={{ fontWeight:600, color:"#1a2332" }}>{row.name}</span></td>
                   <td style={S.td(isSelected)}><span style={{ fontSize:12 }}>{row.country}</span></td>
                   <td style={S.td(isSelected)}><span style={{ fontSize:12 }}>{row.city}</span></td>
