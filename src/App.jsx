@@ -417,8 +417,6 @@ export default function App() {
           {[
             { label:"Contact Information", key:"contact", placeholder:"email, phone…" },
             { label:"Website", key:"website", placeholder:"https://…" },
-            { label:"GDPR Consent", key:"gdpr", type:"select", opts:["YES","NO","PENDING"] },
-            { label:"Status", key:"status", type:"select", opts:["Active","Potential","Pending","Inactive"] },
             { label:"Comments / Justification", key:"comments", span:2 },
           ].map(f => (
             <div key={f.key} style={{ ...S.formGroup, gridColumn: f.span === 2 ? "1 / -1" : undefined }}>
@@ -584,8 +582,6 @@ export default function App() {
                 { label:"Imp.", field:"impact", w:50 },
                 { label:"Category", field:"_cat", w:130 },
                 { label:"Partner", field:"partner", w:80 },
-                { label:"Status", field:"status", w:80 },
-                { label:"GDPR", field:"gdpr", w:70 },
               ].map(col => (
                 <th key={col.field} style={{ ...S.th, width:col.w, minWidth:col.w }} onClick={() => col.field !== "_cat" && sortBy(col.field)}>
                   {col.label}{col.field !== "_cat" && <SortIcon field={col.field} />}
