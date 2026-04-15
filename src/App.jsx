@@ -304,6 +304,35 @@ export default function App() {
               </div>
             </div>
           </div>
+          <div style={S.card}>
+            <div style={{ fontWeight:700, fontSize:14, marginBottom:14, color:"#0a3d62" }}>📊 Influence / Impact Scatter</div>
+            <svg viewBox="0 0 300 260" style={{ width:"100%", height:"auto" }}>
+              <line x1="40" y1="10" x2="40" y2="220" stroke="#e2e8f0" strokeWidth="1"/>
+              <line x1="40" y1="220" x2="290" y2="220" stroke="#e2e8f0" strokeWidth="1"/>
+              <line x1="165" y1="10" x2="165" y2="220" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4"/>
+              <line x1="40" y1="115" x2="290" y2="115" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4"/>
+              <text x="55" y="25" fontSize="7" fill="#94a3b8">Keep satisfied</text>
+              <text x="175" y="25" fontSize="7" fill="#ef4444" fontWeight="bold">Manage closely</text>
+              <text x="55" y="130" fontSize="7" fill="#22c55e">Keep informed</text>
+              <text x="175" y="130" fontSize="7" fill="#3b82f6">Consult with</text>
+              <text x="155" y="245" fontSize="8" fill="#64748b" textAnchor="middle">Influence</text>
+              {data.map((r,i) => {
+                const x = 40 + (Number(r.influence) / 10) * 250;
+                const y = 220 - (Number(r.impact) / 10) * 210;
+                const cat = getCategory(r.influence, r.impact);
+                const color = CATEGORY_COLOR[cat].dot;
+                return <circle key={i} cx={x} cy={y} r="4" fill={color} fillOpacity="0.7"/>;
+              })}
+            </svg>
+            <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginTop:8 }}>
+              {Object.entries(CATEGORY_COLOR).map(([cat,c]) => (
+                <div key={cat} style={{ display:"flex", alignItems:"center", gap:4, fontSize:10, color:"#64748b" }}>
+                  <div style={{ width:8, height:8, borderRadius:"50%", background:c.dot }}/>
+                  {cat}
+                </div>
+              ))}
+            </div>
+          </div>
 
         </div>
 
