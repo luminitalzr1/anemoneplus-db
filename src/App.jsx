@@ -242,6 +242,23 @@ export default function App() {
   };
 
   // ── MAP VIEW ──────────────────────────────────────────────────────────────
+  const PinModal = () => (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center" }} onClick={() => setShowPinModal(false)}>
+      <div style={{ background:"#fff", borderRadius:16, padding:32, width:320, textAlign:"center" }} onClick={e => e.stopPropagation()}>
+        <div style={{ fontSize:32, marginBottom:8 }}>🔒</div>
+        <div style={{ fontWeight:800, fontSize:16, color:"#0a3d62", marginBottom:4 }}>Enter PIN to edit</div>
+        <div style={{ fontSize:12, color:"#64748b", marginBottom:20 }}>Contact the project coordinator for the PIN</div>
+        <input type="password" maxLength={4} value={pinInput} onChange={e => { setPinInput(e.target.value); setPinError(false); }} onKeyDown={e => e.key === "Enter" && submitPin()} placeholder="••••" autoFocus
+          style={{ width:"100%", padding:"9px 12px", borderRadius:8, border: pinError ? "1.5px solid #ef4444" : "1.5px solid #cbd5e1", fontSize:24, textAlign:"center", letterSpacing:8, outline:"none", boxSizing:"border-box", marginBottom:8 }}/>
+        {pinError && <div style={{ fontSize:12, color:"#ef4444", marginBottom:8 }}>Incorrect PIN</div>}
+        <div style={{ display:"flex", gap:8, marginTop:8 }}>
+          <button style={{ flex:1, padding:"8px 16px", borderRadius:8, border:"1.5px solid #e2e8f0", background:"#f8fafc", cursor:"pointer", fontSize:13, fontWeight:600 }} onClick={() => setShowPinModal(false)}>Cancel</button>
+          <button style={{ flex:1, padding:"8px 16px", borderRadius:8, border:"none", background:"#0a3d62", color:"#fff", cursor:"pointer", fontSize:13, fontWeight:600 }} onClick={submitPin}>Unlock</button>
+        </div>
+      </div>
+    </div>
+  );
+
   const MapView = () => {
     const mapRef = React.useRef(null);
     const mapInstanceRef = React.useRef(null);
@@ -771,7 +788,7 @@ export default function App() {
         {view === "table" && <TableView />}
         {view === "stats" && <StatsView />}
         {view === "map"   && <MapView />}
-        {view === "form"  && FormView()}
+        {view === "form"  && <FormView />}
       </main>
 
       {toast && (
