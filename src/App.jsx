@@ -53,6 +53,121 @@ const STATUSES = ["All statuses", "Active", "Potential", "Pending", "Inactive"];
 
 const EMPTY = { country:"", name:"", city:"", lat:"", lng:"", address:"", audience:"", aoi:"", expertise:"", subregion:"", mu:"", influence:5, impact:5, contact:"", gdpr:"PENDING", status:"Pending", website:"", partner:"", comments:"" };
 
+function FormView({ form, setForm, editing, saveForm, saving, setView, S, getCategory, CATEGORY_COLOR }) {
+  return (<div style={{ maxWidth:900, margin:"0 auto" }}>
+      <div style={S.card}>
+        <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
+          <div style={{ width:40, height:40, borderRadius:10, background:"#0a3d62", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, color:"#fff" }}>{editing ? "✏️" : "➕"}</div>
+          <div>
+            <div style={{ fontWeight:800, fontSize:16, color:"#0a3d62" }}>{editing ? "Edit Stakeholder" : "Add New Stakeholder"}</div>
+            <div style={{ fontSize:12, color:"#64748b" }}>Output 1.1 – ANEMONE PLUS Stakeholder Database</div>
+          </div>
+        </div>
+
+        <div style={{ background:"#f0f9ff", borderRadius:8, padding:"10px 14px", marginBottom:18, fontSize:12, color:"#0369a1", borderLeft:"3px solid #0ea5e9" }}>
+          Fields marked with * are required. Geographic coordinates are mandatory for WebGIS integration.
+        </div>
+
+        <div style={{ fontWeight:700, fontSize:12, color:"#64748b", letterSpacing:"0.06em", textTransform:"uppercase", marginBottom:10 }}>Basic Information</div>
+        <div style={S.formGrid}>
+          {[
+            { label:"Stakeholder Name *", key:"name", span:2 },
+            { label:"Country *", key:"country", type:"select", opts:["Romania","Bulgaria","Ukraine","Turkey","Georgia"] },
+            { label:"City", key:"city" },
+            { label:"Latitude (N, WGS84) *", key:"lat", placeholder:"e.g. 44.1734" },
+            { label:"Longitude (E, WGS84) *", key:"lng", placeholder:"e.g. 28.6417" },
+            { label:"Full Address (with postal code)", key:"address", span:2 },
+          ].map(f => (
+            <div key={f.key} style={{ ...S.formGroup, gridColumn: f.span === 2 ? "1 / -1" : undefined }}>
+              <label style={S.label}>{f.label}</label>
+              {f.type === "select" ? (
+                <select style={S.input} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}>
+                  <option value="">Select…</option>
+                  {f.opts.map(o => <option key={o} value={o}>{o === "Turkey" ? "Türkiye" : o}</option>)}
+                </select>
+              ) : (
+                <input style={S.input} value={form[f.key]} placeholder={f.placeholder} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ fontWeight:700, fontSize:12, color:"#64748b", letterSpacing:"0.06em", textTransform:"uppercase", margin:"18px 0 10px" }}>Classification</div>
+        <div style={S.formGrid}>
+          {[
+            { label:"Target Audience (JEMS)", key:"audience", type:"select", opts:["National public authority","Regional public authority","Local public authority","Higher education and research organisations","Interest groups including NGOs","Education / training center and school","Sectoral agency","SME","Business support organisation","General public"] },
+            { label:"Area of Interest", key:"aoi", type:"select", opts:["Protection of marine ecosystems and biodiversity","Water Quality Monitoring","Environmental protection","Biodiversity Conservation","Environmental monitoring and data-driven decisions","Policy development and regulatory implementation","Maritime Transport","Nature management","Citizen Science","Climate change impacts, adaptation and resilience","Sustainable fisheries, aquaculture and blue economy","Other"] },
+            { label:"Thematic Expertise", key:"expertise" },
+            { label:"Sub-Region", key:"subregion", type:"select", opts:["North-Western Black Sea","Western Black Sea","Southern Black Sea","Eastern Black Sea","Northern Black Sea","South-Western Black Sea","South-Eastern Black Sea","North-Eastern Black Sea"] },
+            { label:"Marine Unit (MU)", key:"mu", type:"select", opts:["All Waters","Marine Waters","Coastal waters","Transitional Waters"] },
+            { label:"Responsible Partner", key:"partner", type:"select", opts:["NIMRD","IO-BAS","UKR-SCES","TUBITAK","TUDAV","Mare Nostrum"] },
+          ].map(f => (
+            <div key={f.key} style={S.formGroup}>
+              <label style={S.label}>{f.label}</label>
+              {f.type === "select" ? (
+                <select style={S.input} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}>
+                  <option value="">Select…</option>
+                  {f.opts.map(o => <option key={o}>{o}</option>)}
+                </select>
+              ) : (
+                <input style={S.input} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ fontWeight:700, fontSize:12, color:"#64748b", letterSpacing:"0.06em", textTransform:"uppercase", margin:"18px 0 10px" }}>Scoring (Power/Interest Matrix)</div>
+        <div style={S.formGrid}>
+          {[
+            { label:`Influence / Interest: ${form.influence}/10`, key:"influence" },
+            { label:`Impact: ${form.impact}/10`, key:"impact" },
+          ].map(f => (
+            <div key={f.key} style={S.formGroup}>
+              <label style={S.label}>{f.label}</label>
+              <input type="range" min="1" max="10" value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: Number(e.target.value) }))} style={{ width:"100%", accentColor:"#0a3d62" }} />
+            </div>
+          ))}
+          <div style={{ ...S.formGroup, gridColumn:"1/-1" }}>
+            <label style={S.label}>Resulting Category</label>
+            <div>
+              {(() => { const cat = getCategory(form.influence, form.impact); const c = CATEGORY_COLOR[cat]; return <span style={{ ...S.pill(c.bg, c.text), fontSize:13, padding:"4px 14px" }}>● {cat}</span>; })()}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ fontWeight:700, fontSize:12, color:"#64748b", letterSpacing:"0.06em", textTransform:"uppercase", margin:"18px 0 10px" }}>Contact & Admin</div>
+        <div style={S.formGrid}>
+          {[
+            { label:"Contact Information", key:"contact", placeholder:"email, phone…" },
+            { label:"Website", key:"website", placeholder:"https://…" },
+            { label:"Comments / Justification", key:"comments", span:2 },
+          ].map(f => (
+            <div key={f.key} style={{ ...S.formGroup, gridColumn: f.span === 2 ? "1 / -1" : undefined }}>
+              <label style={S.label}>{f.label}</label>
+              {f.type === "select" ? (
+                <select style={S.input} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}>
+                  {f.opts.map(o => <option key={o}>{o}</option>)}
+                </select>
+              ) : f.span === 2 ? (
+                <textarea style={{ ...S.input, height:70, resize:"vertical" }} value={form[f.key]} placeholder={f.placeholder} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
+              ) : (
+                <input style={S.input} value={form[f.key]} placeholder={f.placeholder} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:24, paddingTop:16, borderTop:"1.5px solid #f1f5f9" }}>
+          <button style={S.btn("ghost")} onClick={() => setView("table")}>Cancel</button>
+          <button style={S.btn("primary")} onClick={saveForm}>💾 {editing ? "Update" : "Add Stakeholder"}</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── DETAIL PANEL ──────────────────────────────────────────────────────────);
+}
+
 export default function App() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -460,119 +575,7 @@ export default function App() {
       </div>
     );
   };
-  const FormView = () => (
-    <div style={{ maxWidth:900, margin:"0 auto" }}>
-      <div style={S.card}>
-        <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
-          <div style={{ width:40, height:40, borderRadius:10, background:"#0a3d62", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, color:"#fff" }}>{editing ? "✏️" : "➕"}</div>
-          <div>
-            <div style={{ fontWeight:800, fontSize:16, color:"#0a3d62" }}>{editing ? "Edit Stakeholder" : "Add New Stakeholder"}</div>
-            <div style={{ fontSize:12, color:"#64748b" }}>Output 1.1 – ANEMONE PLUS Stakeholder Database</div>
-          </div>
-        </div>
 
-        <div style={{ background:"#f0f9ff", borderRadius:8, padding:"10px 14px", marginBottom:18, fontSize:12, color:"#0369a1", borderLeft:"3px solid #0ea5e9" }}>
-          Fields marked with * are required. Geographic coordinates are mandatory for WebGIS integration.
-        </div>
-
-        <div style={{ fontWeight:700, fontSize:12, color:"#64748b", letterSpacing:"0.06em", textTransform:"uppercase", marginBottom:10 }}>Basic Information</div>
-        <div style={S.formGrid}>
-          {[
-            { label:"Stakeholder Name *", key:"name", span:2 },
-            { label:"Country *", key:"country", type:"select", opts:["Romania","Bulgaria","Ukraine","Turkey","Georgia"] },
-            { label:"City", key:"city" },
-            { label:"Latitude (N, WGS84) *", key:"lat", placeholder:"e.g. 44.1734" },
-            { label:"Longitude (E, WGS84) *", key:"lng", placeholder:"e.g. 28.6417" },
-            { label:"Full Address (with postal code)", key:"address", span:2 },
-          ].map(f => (
-            <div key={f.key} style={{ ...S.formGroup, gridColumn: f.span === 2 ? "1 / -1" : undefined }}>
-              <label style={S.label}>{f.label}</label>
-              {f.type === "select" ? (
-                <select style={S.input} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}>
-                  <option value="">Select…</option>
-                  {f.opts.map(o => <option key={o} value={o}>{o === "Turkey" ? "Türkiye" : o}</option>)}
-                </select>
-              ) : (
-                <input style={S.input} value={form[f.key]} placeholder={f.placeholder} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div style={{ fontWeight:700, fontSize:12, color:"#64748b", letterSpacing:"0.06em", textTransform:"uppercase", margin:"18px 0 10px" }}>Classification</div>
-        <div style={S.formGrid}>
-          {[
-            { label:"Target Audience (JEMS)", key:"audience", type:"select", opts:["National public authority","Regional public authority","Local public authority","Higher education and research organisations","Interest groups including NGOs","Education / training center and school","Sectoral agency","SME","Business support organisation","General public"] },
-            { label:"Area of Interest", key:"aoi", type:"select", opts:["Protection of marine ecosystems and biodiversity","Water Quality Monitoring","Environmental protection","Biodiversity Conservation","Environmental monitoring and data-driven decisions","Policy development and regulatory implementation","Maritime Transport","Nature management","Citizen Science","Climate change impacts, adaptation and resilience","Sustainable fisheries, aquaculture and blue economy","Other"] },
-            { label:"Thematic Expertise", key:"expertise" },
-            { label:"Sub-Region", key:"subregion", type:"select", opts:["North-Western Black Sea","Western Black Sea","Southern Black Sea","Eastern Black Sea","Northern Black Sea","South-Western Black Sea","South-Eastern Black Sea","North-Eastern Black Sea"] },
-            { label:"Marine Unit (MU)", key:"mu", type:"select", opts:["All Waters","Marine Waters","Coastal waters","Transitional Waters"] },
-            { label:"Responsible Partner", key:"partner", type:"select", opts:["NIMRD","IO-BAS","UKR-SCES","TUBITAK","TUDAV","Mare Nostrum"] },
-          ].map(f => (
-            <div key={f.key} style={S.formGroup}>
-              <label style={S.label}>{f.label}</label>
-              {f.type === "select" ? (
-                <select style={S.input} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}>
-                  <option value="">Select…</option>
-                  {f.opts.map(o => <option key={o}>{o}</option>)}
-                </select>
-              ) : (
-                <input style={S.input} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div style={{ fontWeight:700, fontSize:12, color:"#64748b", letterSpacing:"0.06em", textTransform:"uppercase", margin:"18px 0 10px" }}>Scoring (Power/Interest Matrix)</div>
-        <div style={S.formGrid}>
-          {[
-            { label:`Influence / Interest: ${form.influence}/10`, key:"influence" },
-            { label:`Impact: ${form.impact}/10`, key:"impact" },
-          ].map(f => (
-            <div key={f.key} style={S.formGroup}>
-              <label style={S.label}>{f.label}</label>
-              <input type="range" min="1" max="10" value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: Number(e.target.value) }))} style={{ width:"100%", accentColor:"#0a3d62" }} />
-            </div>
-          ))}
-          <div style={{ ...S.formGroup, gridColumn:"1/-1" }}>
-            <label style={S.label}>Resulting Category</label>
-            <div>
-              {(() => { const cat = getCategory(form.influence, form.impact); const c = CATEGORY_COLOR[cat]; return <span style={{ ...S.pill(c.bg, c.text), fontSize:13, padding:"4px 14px" }}>● {cat}</span>; })()}
-            </div>
-          </div>
-        </div>
-
-        <div style={{ fontWeight:700, fontSize:12, color:"#64748b", letterSpacing:"0.06em", textTransform:"uppercase", margin:"18px 0 10px" }}>Contact & Admin</div>
-        <div style={S.formGrid}>
-          {[
-            { label:"Contact Information", key:"contact", placeholder:"email, phone…" },
-            { label:"Website", key:"website", placeholder:"https://…" },
-            { label:"Comments / Justification", key:"comments", span:2 },
-          ].map(f => (
-            <div key={f.key} style={{ ...S.formGroup, gridColumn: f.span === 2 ? "1 / -1" : undefined }}>
-              <label style={S.label}>{f.label}</label>
-              {f.type === "select" ? (
-                <select style={S.input} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}>
-                  {f.opts.map(o => <option key={o}>{o}</option>)}
-                </select>
-              ) : f.span === 2 ? (
-                <textarea style={{ ...S.input, height:70, resize:"vertical" }} value={form[f.key]} placeholder={f.placeholder} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
-              ) : (
-                <input style={S.input} value={form[f.key]} placeholder={f.placeholder} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:24, paddingTop:16, borderTop:"1.5px solid #f1f5f9" }}>
-          <button style={S.btn("ghost")} onClick={() => setView("table")}>Cancel</button>
-          <button style={S.btn("primary")} onClick={saveForm}>💾 {editing ? "Update" : "Add Stakeholder"}</button>
-        </div>
-      </div>
-    </div>
-  );
-
-  // ── DETAIL PANEL ──────────────────────────────────────────────────────────
   const DetailPanel = ({ row }) => {
     const cat = getCategory(row.influence, row.impact);
     const cc = CATEGORY_COLOR[cat];
@@ -788,7 +791,7 @@ export default function App() {
         {view === "table" && <TableView />}
         {view === "stats" && <StatsView />}
         {view === "map"   && <MapView />}
-        {view === "form"  && <FormView key="stable-form" />}
+        {view === "form"  && <FormView form={form} setForm={setForm} editing={editing} saveForm={saveForm} saving={saving} setView={setView} S={S} getCategory={getCategory} CATEGORY_COLOR={CATEGORY_COLOR} />}
       </main>
 
       {toast && (
