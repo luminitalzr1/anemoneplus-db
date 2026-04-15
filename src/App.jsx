@@ -481,7 +481,6 @@ export default function App() {
   const DetailPanel = ({ row }) => {
     const cat = getCategory(row.influence, row.impact);
     const cc = CATEGORY_COLOR[cat];
-    const sc = STATUS_COLOR[row.status] || STATUS_COLOR["Inactive"];
     const gc = GDPR_COLOR[row.gdpr] || GDPR_COLOR["PENDING"];
     return (
       <div style={S.detailPanel}>
@@ -493,8 +492,6 @@ export default function App() {
           <button onClick={() => setSelected(null)} style={{ background:"none", border:"none", cursor:"pointer", fontSize:18, color:"#94a3b8", padding:4 }}>✕</button>
         </div>
         <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:16 }}>
-          <span style={S.pill(cc.bg, cc.text)}>● {cat}</span>
-          <span style={S.pill(sc.bg, sc.text)}>{row.status}</span>
           <span style={S.pill(gc.bg, gc.text)}>GDPR: {row.gdpr}</span>
         </div>
 
@@ -631,7 +628,6 @@ export default function App() {
             {filtered.map(row => {
               const cat = getCategory(row.influence, row.impact);
               const cc = CATEGORY_COLOR[cat];
-              const sc = STATUS_COLOR[row.status] || STATUS_COLOR["Inactive"];
               const gc = GDPR_COLOR[row.gdpr] || GDPR_COLOR["PENDING"];
               const isSelected = selected?.id === row.id;
               return (
@@ -645,8 +641,6 @@ export default function App() {
                   <td style={{ ...S.td(isSelected), textAlign:"center" }}><strong style={{ color:"#0a3d62" }}>{row.influence}</strong></td>
                   <td style={{ ...S.td(isSelected), textAlign:"center" }}><strong style={{ color:"#0a3d62" }}>{row.impact}</strong></td>
                   <td style={S.td(isSelected)}><span style={{ ...S.pill(cc.bg, cc.text), fontSize:10 }}>● {cat}</span></td>
-                  <td style={S.td(isSelected)}><span style={{ fontSize:11 }}>{row.partner}</span></td>
-                  <td style={S.td(isSelected)}><span style={{ ...S.pill(sc.bg, sc.text), fontSize:10 }}>{row.status}</span></td>
                   <td style={S.td(isSelected)}><span style={{ ...S.pill(gc.bg, gc.text), fontSize:10 }}>{row.gdpr}</span></td>
                 </tr>
               );
