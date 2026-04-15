@@ -635,7 +635,7 @@ export default function App() {
     <div style={S.app}>
       <header style={S.header}>
         <div style={S.logo}>
-          <img src="/logo.png" alt="ANEMONE PLUS" style={{height:50, width:"auto"}} />
+          <img src="/anemoneplus-db/logo.png" alt="ANEMONE PLUS" style={{height:50, width:"auto"}} />
           <div>
             <div style={S.logoText}>ANEMONE PLUS</div>
             <div style={S.logoSub}>BSB00949 · Stakeholder Database · Output 1.1</div>
