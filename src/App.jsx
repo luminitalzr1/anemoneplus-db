@@ -241,23 +241,74 @@ export default function App() {
     toast: (type) => ({ position:"fixed", bottom:24, right:24, padding:"12px 20px", borderRadius:10, background: type==="error"?"#fee2e2":"#d1fae5", color: type==="error"?"#991b1b":"#065f46", fontWeight:700, fontSize:13, boxShadow:"0 4px 16px rgba(0,0,0,0.15)", zIndex:999, display:"flex", alignItems:"center", gap:8 }),
   };
 
-  // ── STATS VIEW ────────────────────────────────────────────────────────────
-  const PinModal = () => (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center" }} onClick={() => setShowPinModal(false)}>
-      <div style={{ background:"#fff", borderRadius:16, padding:32, width:320, textAlign:"center" }} onClick={e => e.stopPropagation()}>
-        <div style={{ fontSize:32, marginBottom:8 }}>🔒</div>
-        <div style={{ fontWeight:800, fontSize:16, color:"#0a3d62", marginBottom:4 }}>Enter PIN to edit</div>
-        <div style={{ fontSize:12, color:"#64748b", marginBottom:20 }}>Contact the project coordinator for the PIN</div>
-        <input type="password" maxLength={4} value={pinInput} onChange={e => { setPinInput(e.target.value); setPinError(false); }} onKeyDown={e => e.key === "Enter" && submitPin()} placeholder="••••" autoFocus
-          style={{ width:"100%", padding:"9px 12px", borderRadius:8, border: pinError ? "1.5px solid #ef4444" : "1.5px solid #cbd5e1", fontSize:24, textAlign:"center", letterSpacing:8, outline:"none", boxSizing:"border-box", marginBottom:8 }}/>
-        {pinError && <div style={{ fontSize:12, color:"#ef4444", marginBottom:8 }}>Incorrect PIN</div>}
-        <div style={{ display:"flex", gap:8, marginTop:8 }}>
-          <button style={{ flex:1, padding:"8px 16px", borderRadius:8, border:"1.5px solid #e2e8f0", background:"#f8fafc", cursor:"pointer", fontSize:13, fontWeight:600 }} onClick={() => setShowPinModal(false)}>Cancel</button>
-          <button style={{ flex:1, padding:"8px 16px", borderRadius:8, border:"none", background:"#0a3d62", color:"#fff", cursor:"pointer", fontSize:13, fontWeight:600 }} onClick={submitPin}>Unlock</button>
+  // ── MAP VIEW ──────────────────────────────────────────────────────────────
+  const MapView = () => {
+    const mapRef = React.useRef(null);
+    const mapInstanceRef = React.useRef(null);
+
+    React.useEffect(() => {
+      // Load Leaflet CSS
+      if (!document.getElementById("leaflet-css")) {
+        const link = document.createElement("link");
+        link.id = "leaflet-css";
+        link.rel = "stylesheet";
+        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        document.head.appendChild(link);
+      }
+      // Load Leaflet JS
+      const loadMap = () => {
+        if (mapInstanceRef.current) return;
+        const L = window.L;
+        if (!L) return;
+        const map = L.map(mapRef.current, { center:[43, 33], zoom:5 });
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution:"© OpenStreetMap contributors"
+        }).addTo(map);
+        const colors = { "Manage closely":"#ef4444", "Keep satisfied":"#f59e0b", "Consult with":"#3b82f6", "Keep informed":"#22c55e" };
+        data.forEach(r => {
+          if (!r.lat || !r.lng) return;
+          const cat = getCategory(r.influence, r.impact);
+          const color = colors[cat] || "#64748b";
+          const marker = L.circleMarker([Number(r.lat), Number(r.lng)], {
+            radius:7, fillColor:color, color:"#fff", weight:1.5, fillOpacity:0.85
+          }).addTo(map);
+          marker.bindPopup("<strong>" + r.name + "</strong><br/>" + r.city + ", " + r.country + "<br/><em>" + cat + "</em>");
+        });
+        mapInstanceRef.current = map;
+      };
+      if (window.L) { loadMap(); }
+      else {
+        const script = document.createElement("script");
+        script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+        script.onload = loadMap;
+        document.head.appendChild(script);
+      }
+      return () => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.remove();
+          mapInstanceRef.current = null;
+        }
+      };
+    }, []);
+
+    return (
+      <div>
+        <div style={{ marginBottom:12, display:"flex", gap:16, flexWrap:"wrap", alignItems:"center" }}>
+          <span style={{ fontSize:13, color:"#64748b" }}>Showing <strong>{data.filter(r=>r.lat&&r.lng).length}</strong> stakeholders with coordinates</span>
+          <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
+            {[["#ef4444","Manage closely"],["#f59e0b","Keep satisfied"],["#3b82f6","Consult with"],["#22c55e","Keep informed"]].map(([color,label])=>(
+              <div key={label} style={{ display:"flex", alignItems:"center", gap:5, fontSize:12, color:"#64748b" }}>
+                <div style={{ width:10, height:10, borderRadius:"50%", background:color }}/>
+                {label}
+              </div>
+            ))}
+          </div>
         </div>
+        <div ref={mapRef} style={{ height:"calc(100vh - 180px)", borderRadius:12, boxShadow:"0 1px 6px rgba(0,0,0,0.08)", minHeight:400 }}/>
       </div>
-    </div>
-  );
+    );
+  };
+
 
   const StatsView = () => {
     const gdprYes     = data.filter(r => r.gdpr === "YES").length;
@@ -702,6 +753,8 @@ export default function App() {
           {[
             { id:"table", label:"📋 Database" },
             { id:"stats",  label:"📊 Statistics" },
+            { id:"map",    label:"🗺️ Map" },
+            { id:"map",    label:"🗺️ Map" },
             { id:"form",   label:"➕ Add New" },
           ].map(b => (
             <button key={b.id} style={S.navBtn(view === b.id)} onClick={() => { if(b.id==="form") openNew(); else setView(b.id); }}>
@@ -718,7 +771,9 @@ export default function App() {
       <main style={S.body}>
         {view === "table" && <TableView />}
         {view === "stats" && <StatsView />}
-        {view === "form"  && <FormView />}
+        {view === "map"   && <MapView />}
+        {view === "map"   && <MapView />}
+        {view === "form"  && FormView()}
       </main>
 
       {toast && (
