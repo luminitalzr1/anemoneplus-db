@@ -481,7 +481,6 @@ export default function App() {
   const DetailPanel = ({ row }) => {
     const cat = getCategory(row.influence, row.impact);
     const cc = CATEGORY_COLOR[cat];
-    const gc = GDPR_COLOR[row.gdpr] || GDPR_COLOR["PENDING"];
     return (
       <div style={S.detailPanel}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
@@ -492,7 +491,6 @@ export default function App() {
           <button onClick={() => setSelected(null)} style={{ background:"none", border:"none", cursor:"pointer", fontSize:18, color:"#94a3b8", padding:4 }}>✕</button>
         </div>
         <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:16 }}>
-          <span style={S.pill(gc.bg, gc.text)}>GDPR: {row.gdpr}</span>
         </div>
 
         {[
@@ -628,7 +626,6 @@ export default function App() {
             {filtered.map(row => {
               const cat = getCategory(row.influence, row.impact);
               const cc = CATEGORY_COLOR[cat];
-              const gc = GDPR_COLOR[row.gdpr] || GDPR_COLOR["PENDING"];
               const isSelected = selected?.id === row.id;
               return (
                 <tr key={row.id} style={S.tr(isSelected)} onClick={() => setSelected(isSelected ? null : row)} onMouseEnter={e=>e.currentTarget.style.background="#f8fafc"} onMouseLeave={e=>e.currentTarget.style.background=isSelected?"#eff6ff":"transparent"}>
@@ -641,7 +638,6 @@ export default function App() {
                   <td style={{ ...S.td(isSelected), textAlign:"center" }}><strong style={{ color:"#0a3d62" }}>{row.influence}</strong></td>
                   <td style={{ ...S.td(isSelected), textAlign:"center" }}><strong style={{ color:"#0a3d62" }}>{row.impact}</strong></td>
                   <td style={S.td(isSelected)}><span style={{ ...S.pill(cc.bg, cc.text), fontSize:10 }}>● {cat}</span></td>
-                  <td style={S.td(isSelected)}><span style={{ ...S.pill(gc.bg, gc.text), fontSize:10 }}>{row.gdpr}</span></td>
                 </tr>
               );
             })}
