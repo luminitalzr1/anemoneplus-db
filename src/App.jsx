@@ -638,6 +638,7 @@ export default function App() {
                   <td style={{ ...S.td(isSelected), textAlign:"center" }}><strong style={{ color:"#0a3d62" }}>{row.influence}</strong></td>
                   <td style={{ ...S.td(isSelected), textAlign:"center" }}><strong style={{ color:"#0a3d62" }}>{row.impact}</strong></td>
                   <td style={S.td(isSelected)}><span style={{ ...S.pill(cc.bg, cc.text), fontSize:10 }}>● {cat}</span></td>
+                  <td style={S.td(isSelected)}><span style={{ fontSize:11 }}>{row.partner}</span></td>
                 </tr>
               );
             })}
