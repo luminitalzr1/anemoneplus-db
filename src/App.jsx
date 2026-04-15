@@ -678,6 +678,15 @@ export default function App() {
   );
 
   // ── RENDER ────────────────────────────────────────────────────────────────
+  if (loading) return (
+    <div style={{ fontFamily:"'IBM Plex Sans','Segoe UI',sans-serif", background:"#f0f4f8", minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16 }}>
+      <img src="/anemoneplus-db/logo.png" alt="ANEMONE PLUS" style={{ height:80, width:"auto", opacity:0.8 }}/>
+      <div style={{ width:40, height:40, border:"4px solid #0a3d62", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div style={{ color:"#0a3d62", fontWeight:600, fontSize:14 }}>Loading stakeholder database…</div>
+    </div>
+  );
+
   return (
     <div style={S.app}>
       {showPinModal && <PinModal />}
