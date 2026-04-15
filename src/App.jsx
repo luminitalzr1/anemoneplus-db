@@ -16,24 +16,6 @@ async function apiPost(body) {
 
 
 // ── Seed data from UkrSCES template ────────────────────────────────────────
-const SEED = [
-  { id:1, country:"Ukraine", name:"Ukrainian Scientific Centre of Ecology of the Sea (UkrSCES)", city:"Odesa", lat:46.4397, lng:30.7692, address:"65009, Ukraine, Odesa, Frantsuzsky Blvd., 89", audience:"Higher education and research organisations", aoi:"Water Quality Monitoring", expertise:"Research Institute", subregion:"North-Western Black Sea", mu:"Marine Waters", influence:10, impact:3, contact:"yura.oleynik209@gmail.com", gdpr:"YES", status:"Active", website:"https://sea.gov.ua", partner:"UKR-SCES", comments:"Project partner — lead for UKR stakeholders" },
-  { id:2, country:"Ukraine", name:"State Ecological Inspectorate of the South-Western District", city:"Odesa", lat:46.4067, lng:30.7181, address:"65114, Ukraine, Odesa, Lustdorfska road, 22", audience:"Local public authority", aoi:"Water Quality Monitoring", expertise:"Local / Regional Authority", subregion:"North-Western Black Sea", mu:"All Waters", influence:10, impact:8, contact:"sw@dei.gov.ua", gdpr:"YES", status:"Potential", website:"https://sw.dei.gov.ua", partner:"UKR-SCES", comments:"Key decision-maker; permits and reporting" },
-  { id:3, country:"Ukraine", name:"State Ecological Inspection of Ukraine", city:"Kyiv", lat:50.4231, lng:30.5284, address:"01042, Kyiv, Novopecherskyi Lane 3", audience:"National public authority", aoi:"Environmental protection", expertise:"National Authority / Ministry", subregion:"North-Western Black Sea", mu:"All Waters", influence:10, impact:8, contact:"info@dei.gov.ua", gdpr:"YES", status:"Potential", website:"https://dei.gov.ua/", partner:"UKR-SCES", comments:"Key decision-maker" },
-  { id:4, country:"Ukraine", name:"Ministry of Economy, Environment and Agriculture of Ukraine", city:"Kyiv", lat:50.4474, lng:30.5342, address:"01008, Ukraine, Kyiv, M. Hrushevskoho Street, 12/2", audience:"National public authority", aoi:"Environmental protection", expertise:"National Authority / Ministry", subregion:"North-Western Black Sea", mu:"All Waters", influence:10, impact:10, contact:"meconomy@me.gov.ua", gdpr:"YES", status:"Potential", website:"https://me.gov.ua/", partner:"UKR-SCES", comments:"Key decision-maker; highest impact" },
-  { id:5, country:"Ukraine", name:"Dept. of Ecology and Natural Resources of Kherson Regional State Administration", city:"Kherson", lat:46.6411, lng:32.6144, address:"73000, Kherson, pl. Svobody, 1", audience:"National public authority", aoi:"Environmental protection", expertise:"National Authority / Ministry", subregion:"North-Western Black Sea", mu:"All Waters", influence:10, impact:8, contact:"kanc@khoda.gov.ua", gdpr:"YES", status:"Potential", website:"", partner:"UKR-SCES", comments:"" },
-  { id:6, country:"Ukraine", name:"Dept. of Ecology and Natural Resources of Odesa Regional State Administration", city:"Odesa", lat:46.466, lng:30.7466, address:"83 Kanatna St., Odesa, 65107", audience:"National public authority", aoi:"Environmental protection", expertise:"National Authority / Ministry", subregion:"North-Western Black Sea", mu:"All Waters", influence:10, impact:8, contact:"ecolog@od.gov.ua", gdpr:"YES", status:"Potential", website:"http://ecology.od.gov.ua/", partner:"UKR-SCES", comments:"" },
-  { id:7, country:"Ukraine", name:"Odesa I.I. Mechnikov National University", city:"Odesa", lat:46.4876, lng:30.7313, address:"65082, Ukraine, Odesa, Zmienka Vsevoloda Street, 2", audience:"Higher education and research organisations", aoi:"Environmental protection", expertise:"Educational institution", subregion:"North-Western Black Sea", mu:"All Waters", influence:8, impact:3, contact:"rector@onu.edu.ua", gdpr:"PENDING", status:"Pending", website:"https://onu.edu.ua/uk", partner:"UKR-SCES", comments:"Technical expertise; collaboration potential" },
-  { id:8, country:"Ukraine", name:"National Academy of Sciences of Ukraine", city:"Kyiv", lat:50.4449, lng:30.5125, address:"01030, Kyiv, Volodymyrska St., 54", audience:"Higher education and research organisations", aoi:"Environmental protection", expertise:"Research network", subregion:"North-Western Black Sea", mu:"All Waters", influence:9, impact:7, contact:"press@nas.gov.ua", gdpr:"PENDING", status:"Pending", website:"www.nas.gov.ua", partner:"UKR-SCES", comments:"Technical expertise; collaboration potential" },
-  { id:9, country:"Ukraine", name:"Institute of Marine Biology of the National Academy of Sciences of Ukraine", city:"Odesa", lat:46.4763, lng:30.7422, address:"65048, Odesa, Pushkinska St., 37", audience:"Higher education and research organisations", aoi:"Biodiversity Conservation", expertise:"Scientific-Research institution", subregion:"North-Western Black Sea", mu:"Marine Waters", influence:8, impact:3, contact:"imb@nas.gov.ua", gdpr:"PENDING", status:"Pending", website:"https://imb.odessa.ua", partner:"UKR-SCES", comments:"" },
-  { id:10, country:"Ukraine", name:"Danube Biosphere Reserve", city:"Vilkovo", lat:45.4065, lng:29.5843, address:"68355, Odesa region, Vilkovo, 134a", audience:"Local public authority", aoi:"Biodiversity Conservation", expertise:"Local / Regional Authority", subregion:"North-Western Black Sea", mu:"All Waters", influence:7, impact:4, contact:"dbr.org.ua@gmail.com", gdpr:"PENDING", status:"Pending", website:"https://www.dbr.org.ua/", partner:"UKR-SCES", comments:"" },
-  { id:11, country:"Ukraine", name:"WWF-Ukraine", city:"Kyiv", lat:50.4496, lng:30.594, address:"02002, Kyiv, Raisy Okipnoi Street, 4", audience:"Interest groups including NGOs", aoi:"Environmental protection", expertise:"Non-governmental organizations (NGOs)", subregion:"North-Western Black Sea", mu:"All Waters", influence:8, impact:1, contact:"ua@wwf.ua", gdpr:"PENDING", status:"Pending", website:"https://wwf.panda.org/", partner:"UKR-SCES", comments:"" },
-  { id:12, country:"Ukraine", name:"ALL-UKRAINIAN ENVIRONMENTAL LEAGUE", city:"Kyiv", lat:50.4368, lng:30.5122, address:"01033, Kyiv, Saksahanskoho vulitsya, 30-v", audience:"Interest groups including NGOs", aoi:"Environmental protection", expertise:"Non-governmental organizations (NGOs)", subregion:"North-Western Black Sea", mu:"All Waters", influence:6, impact:2, contact:"vel@ecoleague.net", gdpr:"PENDING", status:"Pending", website:"https://www.ecoleague.net/", partner:"UKR-SCES", comments:"" },
-  { id:13, country:"Romania", name:"Ministry of Environment, Water and Forests", city:"Bucharest", lat:44.4258, lng:26.0911, address:"Bulevardul Libertății 12, 030167 București", audience:"National public authority", aoi:"Policy development and regulatory implementation", expertise:"Marine and environmental policy", subregion:"North-Western Black Sea", mu:"All Waters", influence:9, impact:9, contact:"", gdpr:"PENDING", status:"Pending", website:"", partner:"NIMRD", comments:"Key decision-maker" },
-  { id:14, country:"Romania", name:"National Administration of Romanian Waters (ANAR)", city:"Bucharest", lat:44.4408, lng:26.0981, address:"Strada Ion Câmpineanu 11, București", audience:"National public authority", aoi:"Environmental monitoring and data-driven decisions", expertise:"Environmental monitoring and sampling", subregion:"North-Western Black Sea", mu:"All Waters", influence:9, impact:9, contact:"", gdpr:"PENDING", status:"Pending", website:"", partner:"NIMRD", comments:"Data sharing and decision-support access" },
-  { id:15, country:"Romania", name:"Danube Delta Biosphere Reserve Administration", city:"Tulcea", lat:45.1804, lng:28.7952, address:"Strada Portului 34a, 827150 Tulcea", audience:"Local public authority", aoi:"Protection of marine ecosystems and biodiversity", expertise:"Marine ecology and biodiversity", subregion:"North-Western Black Sea", mu:"Transitional Waters", influence:5, impact:9, contact:"", gdpr:"PENDING", status:"Pending", website:"", partner:"NIMRD", comments:"Demonstration and pilot activities" },
-  { id:16, country:"Romania", name:"Romanian Coast Guard", city:"Constanța", lat:44.1734, lng:28.6417, address:"21 Zmeurei Avenue, 900433, Constanta", audience:"Regional public authority", aoi:"Risk prevention and response to marine incidents", expertise:"Emergency response and marine incidents", subregion:"North-Western Black Sea", mu:"All Waters", influence:9, impact:9, contact:"ijpf.constanta@mai.gov.ro", gdpr:"PENDING", status:"Pending", website:"https://www.politiadefrontiera.ro/en/structura-teritoriala-coast-guard/", partner:"NIMRD", comments:"Key decision-maker; permits and reporting" },
-];
 
 function getCategory(influence, impact) {
   if (influence >= 7 && impact >= 7) return "Manage closely";
@@ -70,14 +52,13 @@ const STATUSES = ["All statuses", "Active", "Potential", "Pending", "Inactive"];
 const EMPTY = { country:"", name:"", city:"", lat:"", lng:"", address:"", audience:"", aoi:"", expertise:"", subregion:"", mu:"", influence:5, impact:5, contact:"", gdpr:"PENDING", status:"Pending", website:"", partner:"", comments:"" };
 
 export default function App() {
-  const [data, setData] = useState(SEED);
-  const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkaG1nc2Vsbnhkc3FjeGNpdXBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA5MjM4NjksImV4cCI6MjA1NjQ5OTg2OX0.bYMzSSZMRi0cDSBpRSxGEaAJCXbdp_i6Q9CgDRRzBek';
-  const BASE = 'https://hdhmgselnxdsqcxciupp.supabase.co/rest/v1/stakeholders';
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   useEffect(() => {
-    fetch(BASE + '?select=*&order=id.asc', { headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } })
-      .then(r => r.json())
-      .then(rows => { if (Array.isArray(rows) && rows.length > 0) setData(rows); })
-      .catch(() => {});
+    apiGet()
+      .then(rows => { setData(rows); setLoading(false); })
+      .catch(e => { console.error(e); setLoading(false); });
   }, []);
   const [view, setView] = useState("table"); // table | form | stats
   const [editing, setEditing] = useState(null);
@@ -92,7 +73,7 @@ export default function App() {
   const [sortDir, setSortDir] = useState("asc");
   const [selected, setSelected] = useState(null);
   const [toast, setToast] = useState(null);
-  const [nextId, setNextId] = useState(SEED.length + 1);
+  const [nextId, setNextId] = useState(1);
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
