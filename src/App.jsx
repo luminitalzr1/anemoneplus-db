@@ -47,7 +47,7 @@ const GDPR_COLOR = {
 };
 
 const PARTNERS = ["All partners", "NIMRD", "IO-BAS", "UKR-SCES", "TUBITAK", "TUDAV", "Mare Nostrum"];
-const COUNTRIES = ["All countries", "Romania", "Bulgaria", "Ukraine", "Turkey", "Georgia"];
+const COUNTRIES = ["All countries", "Romania", "Bulgaria", "Ukraine", "Türkiye", "Georgia"];
 const AUDIENCES = ["All audiences", "National public authority", "Regional public authority", "Local public authority", "Higher education and research organisations", "Interest groups including NGOs", "Education / training center and school", "Sectoral agency", "SME", "Business support organisation", "General public"];
 const STATUSES = ["All statuses", "Active", "Potential", "Pending", "Inactive"];
 
@@ -72,7 +72,7 @@ function FormView({ form, setForm, editing, saveForm, saving, setView, S, getCat
         <div style={S.formGrid}>
           {[
             { label:"Stakeholder Name *", key:"name", span:2 },
-            { label:"Country *", key:"country", type:"select", opts:["Romania","Bulgaria","Ukraine","Turkey","Georgia"] },
+            { label:"Country *", key:"country", type:"select", opts:["Romania","Bulgaria","Ukraine","Türkiye","Georgia"] },
             { label:"City", key:"city" },
             { label:"Latitude (N, WGS84) *", key:"lat", placeholder:"e.g. 44.1734" },
             { label:"Longitude (E, WGS84) *", key:"lng", placeholder:"e.g. 28.6417" },
@@ -83,7 +83,7 @@ function FormView({ form, setForm, editing, saveForm, saving, setView, S, getCat
               {f.type === "select" ? (
                 <select style={S.input} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}>
                   <option value="">Select…</option>
-                  {f.opts.map(o => <option key={o} value={o}>{o === "Turkey" ? "Türkiye" : o}</option>)}
+                  {f.opts.map(o => <option key={o} value={o}>{o === "Türkiye" ? "Türkiye" : o}</option>)}
                 </select>
               ) : (
                 <input style={S.input} value={form[f.key]} placeholder={f.placeholder} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
@@ -670,7 +670,7 @@ export default function App() {
           <input style={S.search} placeholder="Search name, city, contact, area of interest…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <select style={S.select} value={filterCountry} onChange={e=>setFilterCountry(e.target.value)}>
-          {COUNTRIES.map(c=><option key={c} value={c}>{c === "Turkey" ? "Türkiye" : c}</option>)}
+          {COUNTRIES.map(c=><option key={c} value={c}>{c === "Türkiye" ? "Türkiye" : c}</option>)}
         </select>
         <select style={S.select} value={filterPartner} onChange={e=>setFilterPartner(e.target.value)}>
           {PARTNERS.map(p=><option key={p}>{p}</option>)}
