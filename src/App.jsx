@@ -296,7 +296,7 @@ export default function App() {
   }
 
   function exportCSV() {
-    const cols = ["id","country","name","city","lat","lng","address","audience","aoi","expertise","subregion","mu","influence","impact","category","contact","gdpr","status","website","partner","comments"];
+    const cols = ["id","country","name","city","lat","lng","address","audience","aoi","expertise","subregion","mu","influence","impact","category","contact","website","partner","comments"];
     const rows = [cols.join(","), ...data.map(r => cols.map(c => {
       const v = c === "category" ? getCategory(r.influence, r.impact) : (r[c] ?? "");
       return `"${String(v).replace(/"/g,'""')}"`;
