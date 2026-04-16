@@ -678,9 +678,6 @@ export default function App() {
         <select style={S.select} value={filterAudience} onChange={e=>setFilterAudience(e.target.value)}>
           {AUDIENCES.map(a=><option key={a}>{a}</option>)}
         </select>
-        <select style={S.select} value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}>
-          {STATUSES.map(s=><option key={s}>{s}</option>)}
-        </select>
         <select style={S.select} value={filterCategory} onChange={e=>setFilterCategory(e.target.value)}>
           {["All categories","Manage closely","Keep satisfied","Consult with","Keep informed"].map(c=><option key={c}>{c}</option>)}
         </select>
