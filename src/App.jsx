@@ -655,7 +655,7 @@ export default function App() {
 
         <div style={{ display:"flex", gap:8, marginTop:16, paddingTop:16, borderTop:"1px solid #f1f5f9" }}>
           <button style={{ ...S.btn("ghost"), flex:1, justifyContent:"center" }} onClick={() => openEdit(row)}>✏️ Edit</button>
-          <button style={{ ...S.btn("danger"), flex:1, justifyContent:"center" }} onClick={() => { if(confirm("Delete this stakeholder?")) deleteRow(row.id); }}>🗑 Delete</button>
+          <button style={{ ...S.btn("danger"), flex:1, justifyContent:"center" }} onClick={() => deleteRow(row.id)}>🗑 Delete</button>
         </div>
       </div>
     );
