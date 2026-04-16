@@ -758,6 +758,12 @@ export default function App() {
   return (
     <div style={S.app}>
       {showPinModal && <PinModal />}
+      {saving && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:300, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:12 }}>
+          <div style={{ width:48, height:48, border:"4px solid #fff", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>
+          <div style={{ color:"#fff", fontWeight:700, fontSize:14, fontFamily:"Arial" }}>Saving...</div>
+        </div>
+      )}
       <header style={S.header}>
         <div style={S.logo}>
           <img src="/anemoneplus-db/logo.png" alt="ANEMONE PLUS" style={{height:50, width:"auto"}} />
