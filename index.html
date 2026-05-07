@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ANEMONE PLUS Stakeholder Database</title>
+    <script type="module" crossorigin src="/anemoneplus-db/assets/index-CXl_qnqA.js"></script>
+    <link rel="stylesheet" crossorigin href="/anemoneplus-db/assets/index-DQ3P1g1z.css">
+    <script>
+      document.addEventListener('keydown', function(e) {
+        if (e.target.matches('input[placeholder*="Search"]')) {
+          setTimeout(function() {
+            var found = document.querySelector('input[placeholder*="Search"]');
+            if (found && document.activeElement !== found) {
+              found.focus();
+              found.setSelectionRange(found.value.length, found.value.length);
+            }
+          }, 50);
+        }
+      }, true);
+    </script>
+    <style>
+      /* ── Mobile-responsive overrides ─────────────────────────────────────
+         React uses inline styles; CSS !important overrides them in all browsers.
+         Selectors use unique style-attribute substrings to target specific elements.
+      ──────────────────────────────────────────────────────────────────────── */
+
+      /* ── TABLET + MOBILE (≤ 768px) ──────────────────────────────────────── */
+      @media screen and (max-width: 768px) {
+
+        /* Main content body — reduce side padding */
+        [style*="max-width: 1400px"] {
+          padding: 10px !important;
+        }
+
+        /* Header — reduce horizontal padding so nav buttons fit */
+        [style*="linear-gradient(135deg, #0a1628"] {
+          padding: 0 8px !important;
+        }
+
+        /* Nav tab buttons — shrink text/padding */
+        [style*="linear-gradient(135deg, #0a1628"] [style*="border-radius: 6px"] {
+          padding: 5px 9px !important;
+          font-size: 11px !important;
+          letter-spacing: 0 !important;
+        }
+
+        /* 5-column KPI statistics grid → 2 columns */
+        [style*="repeat(5, 1fr)"] {
+          grid-template-columns: repeat(2, 1fr) !important;
+        }
+
+        /* All 2-column grids (stat cards, scatter, country, form) → 1 column */
+        [style*="grid-template-columns: 1fr 1fr"] {
+          grid-template-columns: 1fr !important;
+        }
+
+        /* Detail / side panel → full-screen width overlay */
+        [style*="width: 380px"] {
+          width: 100% !important;
+          left: 0 !important;
+        }
+
+        /* Table cells — compact font and padding */
+        table th, table td {
+          padding: 8px 8px !important;
+          font-size: 11px !important;
+        }
+
+        /* Toolbar search wrapper — full width */
+        [style*="position: relative"][style*="min-width: 200px"] {
+          width: 100% !important;
+          min-width: 0 !important;
+        }
+
+        /* Filter selects — full width on mobile */
+        [style*="padding: 8px 12px"][style*="cursor: pointer"] {
+          width: 100% !important;
+        }
+      }
+
+      /* ── PHONE ONLY (≤ 480px) ────────────────────────────────────────────── */
+      @media screen and (max-width: 480px) {
+
+        /* KPI grid → single column on small phones */
+        [style*="repeat(5, 1fr)"] {
+          grid-template-columns: 1fr !important;
+        }
+
+        /* Logo app subtitle — hide to save header space */
+        [style*="letter-spacing: 0.05em"][style*="font-size: 11px"] {
+          display: none !important;
+        }
+
+        /* Header right-side count badge — hide to save space */
+        [style*="background: rgba(0, 180, 216, 0.15)"] {
+          display: none !important;
+        }
+
+        /* KPI stat values — slightly smaller on very small screens */
+        [style*="font-size: 32px"][style*="font-weight: 800"] {
+          font-size: 26px !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
