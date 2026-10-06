@@ -1,4 +1,4 @@
-// Adds a "Projects & Maps" button next to "Map" in the ANEMONE PLUS database menu.
+// Adds a "Black Sea Projects" button next to "Map" in the ANEMONE PLUS database menu.
 // It does not change the app itself: it only adds one extra link that opens projects.html.
 (function () {
   function addLink() {
@@ -9,7 +9,7 @@
     var link = mapBtn.cloneNode(false);           // same look as the existing menu buttons
     link.id = "projects-maps-link";
     link.type = "button";
-    link.textContent = "🌍 Projects & Maps";
+    link.textContent = "🌍 Black Sea Projects";
     link.onclick = function () { link.textContent = "\u23F3 Opening…"; link.style.opacity = "0.7"; window.location.href = "projects.html"; };
     mapBtn.parentNode.insertBefore(link, mapBtn.nextSibling);
   }
