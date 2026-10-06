@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Projects &amp; Maps · ANEMONE PLUS</title>
+<link rel="icon" href="logo.png" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root { --navy:#0f1e33; --navy2:#1e3a5f; --green:#2e9d4f; --red:#d64545; --ink:#1a2b3c; --muted:#64748b; --bg:#f1f5f9; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--ink); }
+  header { background:linear-gradient(90deg,var(--navy),var(--navy2)); color:#fff; display:flex; align-items:center; gap:14px; padding:10px 22px; flex-wrap:wrap; }
+  header img { height:50px; width:auto; background:#fff; border-radius:4px; }
+  .t1 { font-weight:800; font-size:17px; letter-spacing:.3px; }
+  .t2 { font-size:12px; opacity:.75; }
+  header .spacer { flex:1; }
+  header a.back { color:#fff; text-decoration:none; font-weight:600; font-size:14px; padding:8px 14px; border-radius:8px; background:rgba(255,255,255,.12); }
+  header a.back:hover { background:rgba(255,255,255,.22); }
+  main { padding:18px 22px; }
+  .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:14px; }
+  .chip { padding:7px 14px; border-radius:20px; border:2px solid var(--navy2); background:#fff; color:var(--navy2); font-weight:600; cursor:pointer; font-size:14px; }
+  .chip.on { background:var(--navy2); color:#fff; }
+  .chip.g { border-color:var(--green); color:var(--green); } .chip.g.on { background:var(--green); color:#fff; }
+  .chip.r { border-color:var(--red); color:var(--red); }   .chip.r.on { background:var(--red); color:#fff; }
+  .bar input { flex:1 1 220px; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px; }
+  .wrap { display:flex; flex-wrap:wrap; gap:16px; }
+  .list { flex:1 1 320px; max-height:620px; overflow-y:auto; }
+  #map { flex:2 1 420px; height:620px; border-radius:10px; border:1px solid #dbe2ea; }
+  .card { background:#fff; border-left:6px solid; border-radius:8px; padding:10px 12px; margin-bottom:10px; box-shadow:0 1px 3px rgba(0,0,0,.1); cursor:pointer; }
+  .card .top { display:flex; justify-content:space-between; gap:8px; }
+  .card .st { font-weight:700; font-size:12px; white-space:nowrap; }
+  .card .title { font-size:14px; margin-top:2px; }
+  .card .meta { font-size:12px; color:var(--muted); margin-top:4px; }
+  .legend { margin-top:8px; font-size:13px; }
+  .msg { color:var(--muted); }
+  #loader { position:fixed; inset:0; background:rgba(241,245,249,.85); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; z-index:2000; font-weight:600; color:var(--navy2); }
+  #loader .spin { width:52px; height:52px; border:5px solid #cbd5e1; border-top-color:var(--navy2); border-radius:50%; animation:spin .9s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @media (max-width:700px){ #map{height:380px} .list{max-height:none} main{padding:12px} }
+</style>
+</head>
+<body>
+<header>
+  <img src="logo.png" alt="ANEMONE PLUS" />
+  <div><div class="t1">ANEMONE PLUS</div><div class="t2">BSB00949 · Projects &amp; Maps</div></div>
+  <div class="spacer"></div>
+  <a class="back" href="./">← Back to Stakeholder Database</a>
+</header>
+<main>
+  <div class="bar" id="bar">
+    <button class="chip on" data-f="All">All</button>
+    <button class="chip g" data-f="Ongoing">● Ongoing</button>
+    <button class="chip r" data-f="Finished">● Finished</button>
+    <input id="q" placeholder="Search projects, programme, coordinator…" />
+  </div>
+  <div id="loader"><div class="spin"></div><div>Loading projects…</div></div>
+  <p class="msg" id="msg" style="display:none"></p>
+  <div class="wrap">
+    <div class="list" id="list"></div>
+    <div id="map"></div>
+  </div>
+  <div class="legend"><span style="color:var(--green)">●</span> Ongoing &nbsp;&nbsp; <span style="color:var(--red)">●</span> Finished &nbsp;·&nbsp; Data: Projects tab of the ANEMONE PLUS Google Sheet</div>
+</main>
+<script>
+const API = "https://script.google.com/macros/s/AKfycbwR2zrhnt3KQVlWvMit34ffcIUKJveUW2qty6jXkXc3k3rn9bC8oBPaht_lBR_hMh5qMA/exec?action=getProjects";
+const COLORS = { Ongoing:"#2e9d4f", Finished:"#d64545" };
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const num = v => { const n = parseFloat(String(v ?? "").replace(",", ".")); return isFinite(n) ? n : null; };
+const fmt = v => { if (!v) return ""; const d = new Date(v); return (isNaN(d) || !/\d{4}-\d{2}-\d{2}/.test(String(v))) ? String(v) : d.toLocaleDateString("en-GB",{timeZone:"Europe/Bucharest"}); };
+const status = p => { const s = String(p.Status||"").trim().toLowerCase();
+  if (s.startsWith("on") || s === "active") return "Ongoing";
+  if (s.startsWith("fin") || s.startsWith("closed")) return "Finished";
+  const e = p.End ? new Date(p.End) : null; return (e && !isNaN(e) && e < new Date()) ? "Finished" : "Ongoing"; };
+
+const map = L.map("map").setView([43.4, 34], 5);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom:18, attribution:"&copy; OpenStreetMap contributors" }).addTo(map);
+const layer = L.layerGroup().addTo(map);
+let all = [], filter = "All", markers = {};
+
+function render() {
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  const vis = all.filter(p => (filter === "All" || p._s === filter) &&
+    (!q || [p.Acronym,p.Title,p.Programme,p.Coordinator,p.Partners].join(" ").toLowerCase().includes(q)));
+  layer.clearLayers(); markers = {}; const pts = [];
+  document.getElementById("list").innerHTML = vis.map(p => `
+    <div class="card" data-i="${p._i}" style="border-left-color:${COLORS[p._s]}">
+      <div class="top"><strong>${esc(p.Acronym)}</strong><span class="st" style="color:${COLORS[p._s]}">● ${p._s}</span></div>
+      <div class="title">${esc(p.Title)}</div>
+      <div class="meta">${esc([p.Programme, (p.Start||p.End) ? fmt(p.Start)+" – "+fmt(p.End) : ""].filter(Boolean).join(" · "))}</div>
+      ${p.Coordinator ? `<div class="meta">Coordinator: ${esc(p.Coordinator)}</div>` : ""}
+      ${p._lat == null ? `<div class="meta">No coordinates – not on map</div>` : ""}
+    </div>`).join("") || `<p class="msg">No projects match.</p>`;
+  vis.forEach(p => {
+    if (p._lat == null || p._lng == null) return;
+    const m = L.circleMarker([p._lat,p._lng], { radius:9, color:"#fff", weight:2, fillColor:COLORS[p._s], fillOpacity:.95 })
+      .bindPopup(`<b>${esc(p.Acronym)}</b> <span style="color:${COLORS[p._s]}">● ${p._s}</span><br>${esc(p.Title)}<br>` +
+        (p.Programme ? `<i>${esc(p.Programme)}</i><br>` : "") +
+        ((p.Start||p.End) ? `${fmt(p.Start)} – ${fmt(p.End)}<br>` : "") +
+        (p.Coordinator ? `Coordinator: ${esc(p.Coordinator)}<br>` : "") +
+        (p.Partners ? `Partners: ${esc(p.Partners)}<br>` : "") +
+        (p.Website ? `<a href="${esc(p.Website)}" target="_blank" rel="noopener">Website</a>` : ""))
+      .addTo(layer);
+    markers[p._i] = m; pts.push([p._lat,p._lng]);
+  });
+  if (pts.length > 1) map.fitBounds(pts, { padding:[40,40], maxZoom:7 }); else if (pts.length) map.setView(pts[0], 7);
+  document.querySelector('[data-f="All"]').textContent = `All (${all.length})`;
+  document.querySelector('[data-f="Ongoing"]').textContent = `● Ongoing (${all.filter(p=>p._s==="Ongoing").length})`;
+  document.querySelector('[data-f="Finished"]').textContent = `● Finished (${all.filter(p=>p._s==="Finished").length})`;
+}
+
+document.getElementById("bar").addEventListener("click", e => {
+  const f = e.target.dataset && e.target.dataset.f; if (!f) return;
+  filter = f; document.querySelectorAll(".chip").forEach(c => c.classList.toggle("on", c.dataset.f === f)); render();
+});
+document.getElementById("q").addEventListener("input", render);
+document.getElementById("list").addEventListener("click", e => {
+  const c = e.target.closest(".card"); if (!c) return; const m = markers[c.dataset.i];
+  if (m) { map.setView(m.getLatLng(), 8); m.openPopup(); }
+});
+
+fetch(API).then(r => r.json()).then(rows => {
+  all = (Array.isArray(rows) ? rows : (rows.data || [])).filter(p => p.Acronym || p.Title)
+    .map((p,i) => ({ ...p, _i:i, _s:status(p), _lat:num(p.Lat), _lng:num(p.Lng) }));
+  render();
+}).catch(() => { const m = document.getElementById("msg"); m.textContent = "Could not load projects from Google Sheets."; m.style.display = "block"; })
+  .finally(() => { document.getElementById("loader").style.display = "none"; });
+</script>
+</body>
+</html>
